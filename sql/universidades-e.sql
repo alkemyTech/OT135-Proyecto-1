@@ -1,9 +1,8 @@
 SELECT mnp.universidad AS university,
 mnp.carrerra AS career,
-LEFT(mnp.nombrre, strpos(mnp.nombrre,' ') - 1) AS first_name,
-RIGHT(mnp.nombrre, -(strpos(mnp.nombrre,' '))) AS last_name,
+mnp.nombrre AS full_name,
 mnp.sexo AS gender,
-(DATE_PART('year',CURRENT_DATE) - DATE_PART('year',TO_DATE(mnp.nacimiento,'DD/MM/YYYY')))::int AS age,
+TO_DATE(mnp.nacimiento,'DD/MM/YYYY') AS date_of_birth,
 NULL AS "location",
 mnp.codgoposstal AS "postal_code",
 mnp.eemail AS email
@@ -13,10 +12,9 @@ WHERE mnp.universidad = 'Universidad nacional de la pampa'
 UNION
 SELECT rci.univiersities AS university,
 rci.carrera AS career,
-LEFT(rci.names, strpos(rci.names,'-') - 1) AS first_name,
-RIGHT(rci.names, -(strpos(rci.names,'-'))) AS last_name,
+rci.names AS full_name,
 rci.sexo AS gender,
-(DATE_PART('year',CURRENT_DATE) - DATE_PART('year',TO_DATE(rci.inscription_dates,'DD/Mon/YY')))::int AS age,
+TO_DATE(rci.inscription_dates,'DD/Mon/YY') AS date_of_birth,
 rci.localidad AS "location",
 NULL AS "postal_code",
 rci.email AS email
