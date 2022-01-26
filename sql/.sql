@@ -1,0 +1,2 @@
+SELECT * from moron_nacional_pampa, rio_cuarto_interamericana WHERE fechainscripccion BETWEEN '20200901' AND '20210201'
+SELECT * from rio_cuarto_interamericana WHERE inscription_dates AS fechainscripccion BETWEEN '20200901' AND '20210201'
