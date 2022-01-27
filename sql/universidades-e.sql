@@ -14,7 +14,8 @@ SELECT rci.univiersities AS university,
 rci.carrera AS career,
 rci.names AS full_name,
 rci.sexo AS gender,
-TO_DATE(rci.inscription_dates,'DD/Mon/YY') AS date_of_birth,
+--Bug: Toma todas las fechas que esten por debajo de 1970 como si fueran en los 2000
+TO_DATE(rci.fechas_nacimiento,'YY/Mon/DD') AS date_of_birth,
 rci.localidad AS "location",
 NULL AS "postal_code",
 rci.email AS email
