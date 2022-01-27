@@ -1,9 +1,9 @@
 SELECT
 nombre,
 sexo,
-fecha_nacimiento,
+TO_DATE(fecha_nacimiento,'DD/Mon/YY') AS nacimiento,
 email,
-fecha_de_inscripcion,
+TO_DATE(fecha_de_inscripcion,'DD/Mon/YY') AS inscripcion,
 universidad,
 carrera,
 localidad,
@@ -15,13 +15,13 @@ UNION
 SELECT
 name AS nombre,
 sexo,
-fecha_nacimiento,
+TO_DATE(fecha_nacimiento,'YYYY/MM/DD') AS nacimiento,
 correo_electronico AS email,
-fecha_de_inscripcion,
+TO_DATE(fecha_de_inscripcion,'YYYY/MM/DD') AS inscripcion,
 universidad,
 carrera,
 'null' AS localidad,
 codigo_postal
 FROM public.flores_comahue
 WHERE universidad = 'UNIVERSIDAD DE FLORES'
-AND fecha_de_inscripcion BETWEEN '2020/09/01' AND '2021/02/01';
+AND TO_DATE(fecha_de_inscripcion,'YYYY/MM/DD') BETWEEN '2020/09/01' AND '2021/02/01';
