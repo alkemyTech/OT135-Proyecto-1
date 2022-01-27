@@ -3,7 +3,7 @@ from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 
 with DAG(
-    'universidades-E',
+    'dag-universities-e',
     description = 'Configuración un DAG, sin consultas, ni procesamiento para el grupo de universidades E',
     schedule_interval = timedelta(hours = 1),
     start_date = datetime(2022,1,27)
