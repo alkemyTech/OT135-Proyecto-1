@@ -11,6 +11,6 @@ with DAG(
 ) as dag:
     extract = DummyOperator(task_id='extract from sql') # python operator
     transform = DummyOperator(task_id='transform with pandas') # python operator
-    load = DummyOperator(task_id='load to s3') 
+    load = DummyOperator(task_id='load to s3') # conexion a s3
 
     extract >> transform >> load
