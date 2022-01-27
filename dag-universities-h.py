@@ -9,8 +9,8 @@ with DAG(
     schedule_interval=timedelta(hours=1),
     start_date=datetime(2022, 1, 26)
 ) as dag:
-    extract = DummyOperator(task_id='extract from sql') # python operator
-    transform = DummyOperator(task_id='transform with pandas') # python operator
-    load = DummyOperator(task_id='load to s3') # conexion a s3
+    extract = DummyOperator(task_id='extract') # python operator
+    transform = DummyOperator(task_id='transform') # python operator
+    load = DummyOperator(task_id='load') # conexion a s3
 
     extract >> transform >> load
