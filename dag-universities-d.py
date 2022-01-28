@@ -8,8 +8,8 @@ with DAG(
     schedule_interval=timedelta(hours=1),
     start_date=datetime(2022,1,27)
 ) as dag:
-    extract = DummyOperator(task_id='extract from sql')
-    process = DummyOperator(task_id='process with pandas')
-    load = DummyOperator(task_id='load into database')
+    extract = DummyOperator(task_id='extract')
+    process = DummyOperator(task_id='process')
+    load = DummyOperator(task_id='load')
 
     extract >> process >> load
