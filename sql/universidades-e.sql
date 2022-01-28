@@ -2,7 +2,10 @@ SELECT mnp.universidad AS university,
 mnp.carrerra AS career,
 mnp.nombrre AS full_name,
 mnp.sexo AS gender,
-TO_DATE(mnp.nacimiento,'DD/MM/YYYY') AS date_of_birth,
+CASE
+ WHEN TO_DATE(mnp.nacimiento,'DD/MM/YYYY') >= CURRENT_DATE - INTERVAL '16 years' THEN (TO_DATE(mnp.nacimiento,'DD/MM/YYYY') - INTERVAL '100 years')::date
+ ELSE TO_DATE(mnp.nacimiento,'DD/MM/YYYY')::date
+END AS birth_date,
 NULL AS "location",
 mnp.codgoposstal AS "postal_code",
 mnp.eemail AS email
@@ -15,7 +18,10 @@ rci.carrera AS career,
 rci.names AS full_name,
 rci.sexo AS gender,
 --Bug: Toma todas las fechas que esten por debajo de 1970 como si fueran en los 2000
-TO_DATE(rci.fechas_nacimiento,'YY/Mon/DD') AS date_of_birth,
+CASE
+ WHEN TO_DATE(fechas_nacimiento,'YY-Mon-DD') >= CURRENT_DATE - INTERVAL '16 years' THEN (TO_DATE(fechas_nacimiento,'YY-Mon-DD') - INTERVAL '100 years')::date
+ ELSE TO_DATE(fechas_nacimiento,'YY-Mon-DD')::date
+END AS birth_date,
 rci.localidad AS "location",
 NULL AS "postal_code",
 rci.email AS email
