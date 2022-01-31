@@ -1,6 +1,9 @@
 from airflow import DAG
 from datetime import datetime
 from airflow.operators.dummy import DummyOperator
+import logging as log
+
+log.basicConfig(level=log.ERROR, format='%Y-%m-%d:%(processName)s:%(message)s')
 
 with DAG(
     'dag-universities-b',
@@ -13,4 +16,3 @@ with DAG(
     data_load_S3 = DummyOperator(task_id='data_load_S3')
 
     sql_query >> pandas_processing >> data_load_S3
-
