@@ -3,7 +3,7 @@ from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 
 with DAG(
-    'dag_universities_a',
+    'dag_universities_c',
     description='DAG  Universidad Nacional De Jujuy - Universidad De Palermo. Doc de los operators a futuro',
     schedule_interval=timedelta(hours=1),
     start_date=datetime(2022, 1, 26)
