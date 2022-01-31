@@ -4,7 +4,8 @@ from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 
-logging.basicConfig(level=logging.ERROR, format='%Y-%m-%d:%(name)s:%(message)s')
+logging.basicConfig(level=logging.ERROR,
+                    format='%(asctime)s - %(module)s - %(message)s', datefmt='%Y-%m-%d')
 
 with DAG(
     'dag_universities_c',
