@@ -7,9 +7,9 @@ from airflow.operators.dummy import DummyOperator
 
 logging.basicConfig(
 		# muestra fecha, nombre de la universidad y error
-		level=logging.ERROR,                
-        format='%(asctime)s: %(module)s - %(message)s',
-        datefmt='%Y-%m-%d'
+		level = logging.ERROR,                
+        format = '%(asctime)s: %(module)s - %(message)s',
+        datefmt = '%Y-%m-%d'
 )
 
 with DAG(
