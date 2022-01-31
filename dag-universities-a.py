@@ -9,14 +9,8 @@ with DAG(
     schedule_interval = timedelta(hours=1),
     start_date = datetime(2022, 1, 26),
 ) as dag:
-    query_sql = DummyOperator(
-            task_id='query_sql'
-    ) # Consulta SQL
-    pandas_process = DummyOperator(
-            task_id='pandas_process'
-    ) # Procesar datos con pandas
-    load_S3 = DummyOperator(
-            task_id='load_S3'
-    ) # Carga de datos en S3
+    query_sql = DummyOperator(task_id='query_sql') # Consulta SQL
+    pandas_process = DummyOperator(task_id='pandas_process') # Procesar datos con pandas
+    load_S3 = DummyOperator(task_id='load_S3') # Carga de datos en S3
 
     query_sql >> pandas_process >> load_S3
