@@ -4,16 +4,15 @@ from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 
+#UNIVERSIDADES = 'Universidad Tecnológica Nacional / Universidad Nacional De Tres De Febrero'
 logging.basicConfig(
-    #filename = './DAG-e.log',
     level = logging.DEBUG,
     filemode = 'w',
-    format='%(asctime)s - Universidad Tecnológica Nacional / Universidad Nacional De Tres De Febrero - %(message)s',
+    format='%(asctime)s - %(module)s - %(message)s',
     datefmt='%Y-%m-%d',
     )
-logger = logging.getLogger()
-logger.info('Iniciando DAG')
-#logger.error('Mensaje de Error')
+#logger = logging.getLogger()
+#logger.error('Iniciando DAG / Mensaje de error')
 
 with DAG(
     'dag-universities-d',
