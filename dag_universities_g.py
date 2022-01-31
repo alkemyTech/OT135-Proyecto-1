@@ -22,5 +22,4 @@ with DAG(
     extract = DummyOperator(task_id='extract') # extract from sql
     transform = DummyOperator(task_id='transform') # transform with pandas
     load = DummyOperator(task_id='load') # load to s3
-
     extract >> transform >> load
