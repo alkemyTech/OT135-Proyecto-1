@@ -2,6 +2,10 @@ from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 
+import logging
+
+logging.basicConfig(level=logging.ERROR, format='%Y-%m-%d:%(name)s:%(message)s')
+
 with DAG(
     'dag_universities_c',
     description='DAG  Universidad Nacional De Jujuy - Universidad De Palermo. Doc de los operators a futuro',
