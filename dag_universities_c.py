@@ -1,8 +1,8 @@
+import logging
+
 from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
-
-import logging
 
 logging.basicConfig(level=logging.ERROR, format='%Y-%m-%d:%(name)s:%(message)s')
 
