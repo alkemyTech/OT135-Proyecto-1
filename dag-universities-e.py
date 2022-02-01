@@ -10,7 +10,7 @@ from airflow.operators.dummy import DummyOperator
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-formatter = logging.Formatter("%(asctime)s: %(message)s: %(levelname)s: ","%Y-%m-%d")
+formatter = logging.Formatter("%(asctime)s: %(module)s: %(message)s' ","%Y-%m-%d")
 
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter) 
