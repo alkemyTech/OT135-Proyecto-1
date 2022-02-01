@@ -4,6 +4,7 @@ from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 
+
 #UNIVERSIDADES = 'Universidad Tecnológica Nacional / Universidad Nacional De Tres De Febrero'
 logging.basicConfig(
     level = logging.DEBUG,
@@ -13,6 +14,12 @@ logging.basicConfig(
     )
 #logger = logging.getLogger()
 #logger.error('Iniciando DAG / Mensaje de error')
+
+#Se configuran los retries para todo el dag
+default_args = {
+	'retries': 5,
+	'retry_delay': timedelta(minutes=1),
+}
 
 with DAG(
     'dag-universities-d',
