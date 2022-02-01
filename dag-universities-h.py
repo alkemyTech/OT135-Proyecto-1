@@ -1,6 +1,15 @@
+import logging
+
 from airflow import DAG
 from datetime import timedelta, datetime
 from airflow.operators.dummy import DummyOperator
+
+
+logging.basicConfig(
+    level=logging.ERROR,
+    format='%(asctime)s - %(module)s - %(message)s',
+    datefmt='%Y-%m-%d'
+)
 
 # Estos argumentos se pasarán a cada operador
 # Se pueden anular por tarea durante la inicialización del operador
