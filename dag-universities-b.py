@@ -3,7 +3,9 @@ from airflow import DAG
 from datetime import datetime
 from airflow.operators.dummy import DummyOperator
 
-log.basicConfig(level=log.ERROR, format='%Y-%m-%d:%(processName)s:%(message)s')
+log.basicConfig(level=log.ERROR,
+                format='%(asctime)s - %(processName)s - %(message)s',
+                datefmt='%Y-%m-%d')
 
 with DAG(
     'dag-universities-b',
