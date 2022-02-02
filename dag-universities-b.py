@@ -2,6 +2,11 @@ from airflow import DAG
 from datetime import datetime
 from airflow.operators.dummy import DummyOperator
 
+default_args = {
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
+
 with DAG(
     'dag-universities-b',
     description='Hacer un ETL para la Universidad Nacional del Comahue y Universidad del Salvador',
