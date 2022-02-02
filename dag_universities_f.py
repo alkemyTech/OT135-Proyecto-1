@@ -6,7 +6,7 @@ from airflow.operators.dummy import DummyOperator
 # basic logging config
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', level=logging.DEBUG, datefmt='%I:%M:%S')
+logging.basicConfig(format='%(asctime)s - %(module)s - %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d')
 
 with DAG(
     'universidades-F',
