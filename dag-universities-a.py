@@ -1,6 +1,11 @@
+import logging
 from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
+
+logging.basicConfig(level=logging.ERROR,
+                    format='%(asctime)s - %(module)s - %(message)s',
+                    datefmt='%Y-%m-%d')
 
 default_args = {
     'retries': 1,
