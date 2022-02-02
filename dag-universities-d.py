@@ -8,7 +8,6 @@ from airflow.operators.dummy import DummyOperator
 #UNIVERSIDADES = 'Universidad Tecnológica Nacional / Universidad Nacional De Tres De Febrero'
 logging.basicConfig(
     level = logging.DEBUG,
-    filemode = 'w',
     format='%(asctime)s - %(module)s - %(message)s',
     datefmt='%Y-%m-%d',
     )
