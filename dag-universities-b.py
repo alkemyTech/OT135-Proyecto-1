@@ -3,9 +3,16 @@ from airflow import DAG
 from datetime import datetime
 from airflow.operators.dummy import DummyOperator
 
+
 log.basicConfig(level=log.ERROR,
                 format='%(asctime)s - %(processName)s - %(message)s',
                 datefmt='%Y-%m-%d')
+
+default_args = {
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
+
 
 with DAG(
     'dag-universities-b',

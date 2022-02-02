@@ -6,7 +6,11 @@ with DAG(
     'universidades-F',
     description = 'DAG correspondiente a las universidades de Morón y Río Cuarto',
     schedule_interval = timedelta(hours=1),
-    start_date = datetime(2022, 1, 28)
+    start_date = datetime(2022, 1, 28),
+    default_args = {
+            'retries': 5,
+            'retry_delay': timedelta(minutes=5)
+            },
 ) as dag:
     extract = DummyOperator(task_id = 'extract_data')
     transform = DummyOperator(task_id = 'transform_data')

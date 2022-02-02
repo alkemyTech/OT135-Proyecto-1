@@ -1,10 +1,28 @@
+import logging
+
 from airflow import DAG
 from datetime import timedelta, datetime
 from airflow.operators.dummy import DummyOperator
 
+
+logging.basicConfig(
+    level=logging.ERROR,
+    format='%(asctime)s - %(module)s - %(message)s',
+    datefmt='%Y-%m-%d'
+)
+
+# Estos argumentos se pasarán a cada operador
+# Se pueden anular por tarea durante la inicialización del operador
+default_args = {
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
+
 # instanciamos dag   
 with DAG(
     'dag-universities-h',
+    # diccionario de argumentos predeterminado
+    default_args=default_args,    
     description='configuracion de dags para grupo de universidades',
     schedule_interval=timedelta(hours=1),
     start_date=datetime(2022, 1, 26)
