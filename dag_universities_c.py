@@ -7,8 +7,14 @@ from airflow.operators.dummy import DummyOperator
 logging.basicConfig(level=logging.ERROR,
                     format='%(asctime)s - %(module)s - %(message)s', datefmt='%Y-%m-%d')
 
+default_args = {
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
+
 with DAG(
     'dag_universities_c',
+    default_args=default_args,
     description='DAG  Universidad Nacional De Jujuy - Universidad De Palermo. Doc de los operators a futuro',
     schedule_interval=timedelta(hours=1),
     start_date=datetime(2022, 1, 26)
