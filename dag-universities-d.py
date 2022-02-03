@@ -5,21 +5,31 @@ from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
+from decouple import config
 import pandas as pd
 
 def extract_process():
-    user = 'alkemy_super_user'
-    passwd = 'JkG3Ymc3AZuu'
-    host = 'training-main.cghe7e6sfljt.us-east-1.rds.amazonaws.com'
-    port = '5432'
-    db = 'training'
+    """
+    Function to be used as a PythonOperator callable funtion to extract the data from the sql file and save it as a CSV 
+    """
     sql = open('sql/universidades-d.sql', 'r').read()
     df = pd.read_sql(f"{sql}", f'postgresql://{user}:{passwd}@{host}:{port}/{db}')
-    home = os.getcwd()
-    if os.path.exists(f"{home}/file") == False:
-        os.makedirs(f"{home}/file")
-    return df.to_csv(f"{home}/file/universidades-d.csv")
+    home = os.path.dirname(__file__)
+    try:
+        if os.path.exists(f"{home}/file") == False:
+            os.makedirs(f"{home}/file")
+        df.to_csv(f"{home}/file/universidades-d.csv")
+        logging.info('csv file created correctly')
+    except Exception as e:
+        logging.error(e)
 
+
+#database connection
+user = config('DB_USER')
+passwd = config('DB_PASSWORD')
+host = config('DB_HOST')
+port = config('DB_PORT')
+db = config('PSQL_DB')
 
 
 #UNIVERSIDADES = 'Universidad Tecnológica Nacional / Universidad Nacional De Tres De Febrero'
@@ -43,11 +53,11 @@ with DAG(
     schedule_interval=timedelta(hours=1),
     start_date=datetime(2022,1,27)
 ) as dag:
-    extract = PythonOperator(
-        task_id='extract',
-        python_callable=extract_process()
+    extract_data = PythonOperator(
+        task_id='extract_data',
+        python_callable=extract_process
     )
     process = DummyOperator(task_id='process')
     load = DummyOperator(task_id='load')
 
-    extract >> process >> load
+    extract_data >> process >> load
