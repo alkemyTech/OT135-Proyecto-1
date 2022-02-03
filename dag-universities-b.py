@@ -14,6 +14,7 @@ log.basicConfig(level=log.ERROR,
                 format='%(asctime)s - %(processName)s - %(message)s',
                 datefmt='%Y-%m-%d')
 
+#Se configura la cantidad de reintentos en caso de que el DAG falle
 default_args = {
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
@@ -33,16 +34,20 @@ with DAG(
     schedule_interval='@hourly',
     start_date=datetime(2022, 1, 26)
 ) as dag:
-    def sql_query():
+    def sql_query_extract():
+        '''
+        Lee la SQL query para las universidades B
+        Crea un DataFrame con Pandas
+        Exporta el df a un archivo csv dentro de la carpeta files
+        '''
         query = open('sql/universidades-b.sql', 'r')
-        df = pd.read_sql_query(query.read(),
-                               con=engine)
+        df = pd.read_sql_query(query.read(), con=engine)
         df.to_csv('files/universidades-b.csv')
         query.close()
 
     sql_query = PythonOperator(
         task_id='sql_query',
-        python_callable=sql_query,
+        python_callable=sql_query_extract,
     )
 
     pandas_processing = DummyOperator(task_id='pandas_processing')
