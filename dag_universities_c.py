@@ -31,7 +31,7 @@ def extract_data():
     with open(ARCHIVO,'r') as sql_file:
         sql_query = sql_file.read()
     dataframe = pd.read_sql_query(sql_query,sql_connection)
-    dataframe.to_csv(PATH_TO_CSV_FILES + '/universities_c.csv', encoding='utf-8-sig')
+    dataframe.to_csv(PATH_TO_CSV_FILES + '\\universities_c.csv', encoding='utf-8-sig')
 
 default_args = {
     'retries': 1,
