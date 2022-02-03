@@ -2,14 +2,14 @@ from configparser import ConfigParser
 import logging 
 import os
 
-
 from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 import pandas as pd
-from sqlalchemy import create_engine
 import psycopg2
+from sqlalchemy import create_engine
+
 
 logging.basicConfig(
 		# muestra fecha, nombre de la universidad y error
@@ -18,10 +18,13 @@ logging.basicConfig(
         datefmt = '%Y-%m-%d'
 )
 
+# Ruta a directorio local
+dir = os.path.dirname(__file__)
+
 
 # Lee los parámetros de configuración de la base de datos
 config = ConfigParser()
-config.read('/home/aguyanzon/Alkemy/apache-aiflow-aceleracion/airflow/dags/OT135-Proyecto-1/template.cfg')
+config.read(f'{dir}/config.cfg')
 cfg = config['DBCONFIG']
 
 
@@ -37,9 +40,9 @@ def sql_query_to_csv():
     con la base de datos, y luego lo exporta en formato csv.
     '''
     try:
-        sql_file = open('/home/aguyanzon/Alkemy/apache-aiflow-aceleracion/airflow/dags/OT135-Proyecto-1/sql/universidades-g.sql', "r")
+        sql_file = open(f'{dir}/sql/universidades-g.sql', "r")
         df_read = pd.read_sql(sql_file.read(), engine)
-        df_read.to_csv("files/universidades-g.csv")
+        df_read.to_csv(f"{dir}/files/universidades-g.csv")
         logging.info("csv file successfully exported")
     except Exception as error:
         logging.error(error)
