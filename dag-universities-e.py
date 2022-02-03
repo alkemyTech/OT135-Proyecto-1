@@ -2,6 +2,7 @@ import pandas as pd
 import logging
 import csv
 from sqlalchemy import create_engine, text
+from decouple import config
 
 from datetime import timedelta, datetime
 from airflow import DAG
@@ -18,12 +19,11 @@ stream_handler.setFormatter(formatter)
 
 logger.addHandler(stream_handler)
 
-# ideal crear un archivo .env
-DB_USER = "alkemy_super_user"
-DB_PASSWORD = "JkG3Ymc3AZuu"
-DB_HOST = "training-main.cghe7e6sfljt.us-east-1.rds.amazonaws.com"
-DB_PORT = 5432
-DB_DB = "training"
+DB_USER = config('DB_USER')
+DB_PASSWORD = config('DB_PASSWORD')
+DB_HOST = config('DB_HOST')
+DB_NAME = config('DB_NAME')
+DB_PORT = config('DB_PORT')
 
 SQL_SCRIPT = "sql/universidades-e.sql"
 
@@ -35,12 +35,11 @@ def extract():
     definido ejecuta sus queries sobre la base de datos y lo guarda como un
     archivo csv'''
     try:
-        query = open(SQL_SCRIPT, 'r')
-        df_query = pd.read_sql_query(query.read(), engine)
-        query.close()
-        logger.info('sql successfully executed')
-        df_query.to_csv('files/universities-e.csv')
-        logger.info('csv successfully save')
+        with open (SQL_SCRIPT, 'r') as query:
+           df_query = pd.read_sql_query(query.read(), engine)
+           logger.info('sql successfully executed')
+           df_query.to_csv('./files/universities-e.csv')
+           logger.info('csv successfully save')
     except Exception as e:
         logger.error(e)
 
