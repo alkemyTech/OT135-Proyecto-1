@@ -1,7 +1,13 @@
 import logging as log
+from datetime import timedelta, datetime
+
 from airflow import DAG
-from datetime import datetime
 from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import PythonOperator
+import pandas as pd
+import sqlalchemy
+
+import config
 
 
 log.basicConfig(level=log.ERROR,
@@ -13,6 +19,8 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
+engine = sqlalchemy.create_engine(
+    f'postgresql+psycopg2://{config._username}:{config._password}@{config._databasehost}:{config._port}/{config._databasename}')
 
 with DAG(
     'dag-universities-b',
@@ -20,7 +28,18 @@ with DAG(
     schedule_interval='@hourly',
     start_date=datetime(2022, 1, 26)
 ) as dag:
-    sql_query = DummyOperator(task_id='sql_query')
+    def sql_query():
+        query = open('sql/universidades-b.sql', 'r')
+        df = pd.read_sql_query(query.read(),
+                               con=engine)
+        df.to_csv('files/universidades-b.csv')
+        query.close()
+
+    sql_query = PythonOperator(
+        task_id='sql_query',
+        python_callable=sql_query,
+    )
+
     pandas_processing = DummyOperator(task_id='pandas_processing')
     data_load_S3 = DummyOperator(task_id='data_load_S3')
 
