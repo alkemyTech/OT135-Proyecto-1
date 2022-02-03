@@ -1,5 +1,5 @@
 import logging
-from os import makedirs
+import os
 from datetime import timedelta, datetime
 
 import pandas as pd
@@ -15,9 +15,10 @@ logging.basicConfig(level=logging.DEBUG, #previously ERROR
                     )
 
 def extract_data():
-    PATH_TO_CSV_FILES = 'airflow/dags/files'
-    ARCHIVO = 'airflow/dags/sql/universidades-c.sql'
-    makedirs(PATH_TO_CSV_FILES, exist_ok=True)
+    DIR = os.path.dirname(__file__)
+    PATH_TO_CSV_FILES = DIR + '\\files'
+    ARCHIVO = DIR + '\\sql\\universidades-c.sql'
+    os.makedirs(PATH_TO_CSV_FILES, exist_ok = True)
     sql_connection = ('postgresql+psycopg2://'
         + config.DB_USER
         + ':'
@@ -30,7 +31,7 @@ def extract_data():
     with open(ARCHIVO,'r') as sql_file:
         sql_query = sql_file.read()
     dataframe = pd.read_sql_query(sql_query,sql_connection)
-    dataframe.to_csv(PATH_TO_CSV_FILES + '/universities_c.csv')
+    dataframe.to_csv(PATH_TO_CSV_FILES + '/universities_c.csv', encoding='utf-8-sig')
 
 default_args = {
     'retries': 1,
