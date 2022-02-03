@@ -9,7 +9,6 @@ import sqlalchemy
 
 import config
 
-
 log.basicConfig(level=log.ERROR,
                 format='%(asctime)s - %(processName)s - %(message)s',
                 datefmt='%Y-%m-%d')
