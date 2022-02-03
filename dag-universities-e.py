@@ -3,7 +3,7 @@ import logging
 import csv
 from sqlalchemy import create_engine, text
 from decouple import config
-
+import os
 
 from datetime import timedelta, datetime
 from airflow import DAG
@@ -29,8 +29,8 @@ DB_PORT = config('DB_PORT')
 
 SQL_SCRIPT = "sql/universidades-e.sql"
 
-engine = create_engine(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_DB}".format(), echo=False, client_encoding='utf8')
-
+engine = create_engine(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(), echo=False, client_encoding='utf8')
+logger.info('successfully connection')
 
 def extract():
     '''Toma la conexion a la base de datos engine y a partir del sql.script
