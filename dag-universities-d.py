@@ -15,9 +15,10 @@ def extract_process():
     db = 'training'
     sql = open('sql/universidades-d.sql', 'r').read()
     df = pd.read_sql(f"{sql}", f'postgresql://{user}:{passwd}@{host}:{port}/{db}')
-    if os.path.exists("/home/ldavidts/apache-airflow-aceleracion/airflow/OT135-Proyecto-1/file") == False:
-        os.makedirs("/home/ldavidts/apache-airflow-aceleracion/airflow/OT135-Proyecto-1/file")
-    return df.to_csv("/home/ldavidts/apache-airflow-aceleracion/airflow/OT135-Proyecto-1/file/universidades-d.csv")
+    home = os.getcwd()
+    if os.path.exists(f"{home}/file") == False:
+        os.makedirs(f"{home}/file")
+    return df.to_csv(f"{home}/file/universidades-d.csv")
 
 
 
