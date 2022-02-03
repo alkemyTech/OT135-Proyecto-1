@@ -1,7 +1,12 @@
+from configparser import ConfigParser
 import logging 
+
 from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import PythonOperator
+import pandas as pd
+from sqlalchemy import create_engine
 
 logging.basicConfig(
 		# muestra fecha, nombre de la universidad y error
@@ -9,6 +14,18 @@ logging.basicConfig(
         format = '%(asctime)s: %(module)s - %(message)s',
         datefmt = '%Y-%m-%d'
 )
+
+# Lee los parámetros de configuración de la base de datos
+config = ConfigParser()
+config.read('template.cfg')
+cfg = config["DBCONFIG"]
+
+# Conexión con base de datos
+params = "postgresql+psycopg2://{}:{}@{}/{}".format(
+    cfg["DB_USER"], cfg["DB_PASSWORD"],
+    cfg["DB_HOST"], cfg["DB_NAME"])
+engine = create_engine(params, pool_size=1)
+
 
 default_args = {
    # 'owner': 'airflow',
