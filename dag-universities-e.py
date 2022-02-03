@@ -4,6 +4,7 @@ import csv
 from sqlalchemy import create_engine, text
 from decouple import config
 
+
 from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
@@ -24,6 +25,7 @@ DB_PASSWORD = config('DB_PASSWORD')
 DB_HOST = config('DB_HOST')
 DB_NAME = config('DB_NAME')
 DB_PORT = config('DB_PORT')
+
 
 SQL_SCRIPT = "sql/universidades-e.sql"
 
