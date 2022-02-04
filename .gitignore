@@ -1,6 +1,6 @@
 *.cfg
-!template.cfg
 *.env
+!template.cfg
 !template.env
 *.csv
 /files

@@ -1,4 +1,3 @@
-from configparser import ConfigParser
 import logging 
 import os
 
@@ -6,8 +5,8 @@ from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
+from decouple import config
 import pandas as pd
-import psycopg2
 from sqlalchemy import create_engine
 
 
@@ -21,20 +20,20 @@ logging.basicConfig(
 # Ruta a directorio local
 dir = os.path.dirname(__file__)
 
-
-# Lee los parámetros de configuración de la base de datos
-config = ConfigParser()
-config.read(f'{dir}/config.cfg')
-cfg = config['DBCONFIG']
-
+# Parámetros de la base de datos
+DB_USER = config("DB_USER")
+DB_PASSWORD = config("DB_PASSWORD")
+DB_HOST = config("DB_HOST")
+DB_PORT = config("DB_PORT")
+DB_NAME = config("DB_NAME")
 
 # Conexión con base de datos
-params = "postgresql+psycopg2://{}:{}@{}/{}".format(
-    cfg["DB_USER"], cfg["DB_PASSWORD"],
-    cfg["DB_HOST"], cfg["DB_NAME"])
-engine = create_engine(params, pool_size=1)
-
-
+try:
+    path_connection = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    engine = create_engine(path_connection, pool_size=1)
+except Exception as error:
+    logging.error(error)
+    
 def sql_query_to_csv():
     '''Lee la consulta del archivo sql en formato de DataFrame a través de la conexión realizada
     con la base de datos, y luego lo exporta en formato csv.
@@ -42,6 +41,9 @@ def sql_query_to_csv():
     try:
         sql_file = open(f'{dir}/sql/universidades-g.sql', "r")
         df_read = pd.read_sql(sql_file.read(), engine)
+        if not os.path.exists(f"{dir}/files"):
+            # Creo carpeta files si no existe
+            os.makedirs(f"{dir}/files")
         df_read.to_csv(f"{dir}/files/universidades-g.csv")
         logging.info("csv file successfully exported")
     except Exception as error:
