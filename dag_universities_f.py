@@ -1,5 +1,6 @@
 import pandas as pd
 import logging
+import os
 from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
@@ -18,6 +19,7 @@ DB_USER = config('DB_USER')
 DB_PASSWORD = config('DB_PASSWORD')
 DB_PORT = config('DB_PORT')
 
+# Conexion a la base de datos
 engine = create_engine(f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
 
 '''
@@ -25,10 +27,12 @@ engine = create_engine(f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT
     el resultado en la carpeta files con formato csv
 '''
 def extract():
-    query = open('universidades-f.sql', 'r')
-    df = pd.read_sql_query(query.read(), engine)
-    query.close()
-    df.to_csv('files/universities-f.csv')
+    route = os.path.dirname(__file__)
+    file_sql = f'{route}/sql/universidades-f.sql'
+    with open(file_sql, 'r') as query:
+        sql_query = query.read()
+    df = pd.read_sql_query(sql_query, engine)
+    df.to_csv(f'{route}/files/universities-f.csv')
 
 with DAG(
     'universidades-F',
