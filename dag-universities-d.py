@@ -17,9 +17,9 @@ def extract_process():
     df = pd.read_sql(f"{sql}", f'postgresql://{user}:{passwd}@{host}:{port}/{db}')
     
     try:
-        if os.path.exists(f"{home}/file") == False:
-            os.makedirs(f"{home}/file")
-        df.to_csv(f"{home}/file/universidades-d.csv")
+        if os.path.exists(f"{home}/files") == False:
+            os.makedirs(f"{home}/files")
+        df.to_csv(f"{home}/files/universidades-d.csv")
         logging.info('csv file created correctly')
     except Exception as e:
         logging.error(e)
