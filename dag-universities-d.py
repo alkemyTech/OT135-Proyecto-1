@@ -12,9 +12,10 @@ def extract_process():
     """
     Function to be used as a PythonOperator callable funtion to extract the data from the sql file and save it as a CSV 
     """
-    sql = open('sql/universidades-d.sql', 'r').read()
-    df = pd.read_sql(f"{sql}", f'postgresql://{user}:{passwd}@{host}:{port}/{db}')
     home = os.path.dirname(__file__)
+    sql = open(f'{home}/sql/universidades-d.sql', 'r').read()
+    df = pd.read_sql(f"{sql}", f'postgresql://{user}:{passwd}@{host}:{port}/{db}')
+    
     try:
         if os.path.exists(f"{home}/file") == False:
             os.makedirs(f"{home}/file")
