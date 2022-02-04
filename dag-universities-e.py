@@ -26,8 +26,9 @@ DB_HOST = config('DB_HOST')
 DB_NAME = config('DB_NAME')
 DB_PORT = config('DB_PORT')
 
+route = os.path.dirname(__file__)
 
-SQL_SCRIPT = "sql/universidades-e.sql"
+SQL_SCRIPT = f'{route}sql/universidades-e.sql'
 
 engine = create_engine(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(), echo=False, client_encoding='utf8')
 logger.info('successfully connection')
@@ -40,7 +41,7 @@ def extract():
         with open (SQL_SCRIPT, 'r') as query:
            df_query = pd.read_sql_query(query.read(), engine)
            logger.info('sql successfully executed')
-           df_query.to_csv('./files/universities-e.csv')
+           df_query.to_csv(f'{route}/files/universities-e.csv')
            logger.info('csv successfully save')
     except Exception as e:
         logger.error(e)
