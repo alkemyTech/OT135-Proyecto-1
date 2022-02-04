@@ -1,6 +1,7 @@
 import logging as log
 from datetime import timedelta, datetime
 from configparser import ConfigParser
+import os
 
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
@@ -26,7 +27,7 @@ config.read('config.cfg')
 cfg = config["DBCONFIG"]
 engine = sqlalchemy.create_engine(
     f'postgresql+psycopg2://{cfg["_username"]}:{cfg["_password"]}@{cfg["_databasehost"]}:{cfg["_port"]}/{cfg["_databasename"]}')
-log.info('Successfully connected to DB')
+log.info('Conexión exitosa con la base de datos')
 
 with DAG(
     'dag-universities-b',
@@ -41,14 +42,20 @@ with DAG(
         Exporta el df a un archivo csv dentro de la carpeta files
         '''
         try:
-            sql_path = 'sql/universidades-b.sql'
+            dir = os.path.dirname(__file__)
+            print(dir)
+            sql_path = f'{dir}/sql/universidades-b.sql'
             csv_path = 'files/universidades-b.csv'
             query = open(sql_path, 'r')
             df = pd.read_sql_query(query.read(), con=engine)
+            # Creo carpeta files si no existe
+            if not os.path.exists(f"{dir}/files"):
+                os.makedirs(f"{dir}/files")
             df.to_csv(csv_path)
             query.close()
+            log.INFO('CSV creado con exito')
         except Exception as e:
-            print(e)
+            log.ERROR(e)
 
     sql_query = PythonOperator(
         task_id='sql_query',
