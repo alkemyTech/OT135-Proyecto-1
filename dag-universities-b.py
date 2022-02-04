@@ -45,9 +45,9 @@ def sql_query_extract():
             os.makedirs(f"{dir}/files")
         df.to_csv(f'{dir}/files/universidades-b.csv')
         query.close()
-        log.INFO('CSV creado con exito')
+        log.info('CSV creado con exito')
     except Exception as e:
-        log.ERROR(e)
+        log.error(e)
 
 with DAG(
     'dag-universities-b',
