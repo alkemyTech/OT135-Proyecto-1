@@ -38,14 +38,12 @@ def sql_query_extract():
     Exporta el df a un archivo csv dentro de la carpeta files
     '''
     try:
-        sql_path = f'{dir}/sql/universidades-b.sql'
-        csv_path = f'{dir}/files/universidades-b.csv'
-        query = open(sql_path, 'r')
+        query = open(f'{dir}/sql/universidades-b.sql', 'r')
         df = pd.read_sql_query(query.read(), con=engine)
         # Creo carpeta files si no existe
         if not os.path.exists(f"{dir}/files"):
             os.makedirs(f"{dir}/files")
-        df.to_csv(csv_path)
+        df.to_csv(f'{dir}/files/universidades-b.csv')
         query.close()
         log.INFO('CSV creado con exito')
     except Exception as e:
