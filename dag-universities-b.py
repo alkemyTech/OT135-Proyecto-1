@@ -1,6 +1,5 @@
 import logging as log
 from datetime import timedelta, datetime
-from configparser import ConfigParser
 import os
 
 from airflow import DAG
@@ -8,6 +7,7 @@ from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 import pandas as pd
 import sqlalchemy
+from decouple import config
 
 #Establecemos la ruta al directorio local
 dir = os.path.dirname(__file__)
@@ -23,13 +23,20 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
+# Parámetros de la base de datos
+DB_USER = config("DB_USER")
+DB_PASSWORD = config("DB_PASSWORD")
+DB_HOST = config("DB_HOST")
+DB_PORT = config("DB_PORT")
+DB_NAME = config("DB_NAME")
+
 #Se coonfigura la conexión con la base de datos
-config = ConfigParser()
-config.read(f'{dir}/config.cfg')
-cfg = config["DBCONFIG"]
-engine = sqlalchemy.create_engine(
-    f'postgresql+psycopg2://{cfg["_username"]}:{cfg["_password"]}@{cfg["_databasehost"]}:{cfg["_port"]}/{cfg["_databasename"]}')
-log.info('Conexión exitosa con la base de datos')
+try:
+    engine = sqlalchemy.create_engine(
+    f'postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
+    log.info('Conexión exitosa con la base de datos')
+except Exception as e:
+        log.error(e)
 
 def sql_query_extract():
     '''
