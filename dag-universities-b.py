@@ -40,10 +40,15 @@ with DAG(
         Crea un DataFrame con Pandas
         Exporta el df a un archivo csv dentro de la carpeta files
         '''
-        query = open('sql/universidades-b.sql', 'r')
-        df = pd.read_sql_query(query.read(), con=engine)
-        df.to_csv('files/universidades-b.csv')
-        query.close()
+        try:
+            sql_path = 'sql/universidades-b.sql'
+            csv_path = 'files/universidades-b.csv'
+            query = open(sql_path, 'r')
+            df = pd.read_sql_query(query.read(), con=engine)
+            df.to_csv(csv_path)
+            query.close()
+        except Exception as e:
+            print(e)
 
     sql_query = PythonOperator(
         task_id='sql_query',
