@@ -29,9 +29,11 @@ def query():
                                client_encoding='utf8')
         query = open(QUERY, 'r')
         df_query = pd.read_sql_query(query.read(), engine)
+        if not os.path.exists(f'{DIR}/files'):
+            os.makedirs(f'{DIR}/files')
         df_query.to_csv(f'{DIR}/files/universities-e.csv')
-    except:
-        logging.error(Exception) # Si ocurre un error no muestra el nombre del grupo de universidades
+    except Exception as e:
+        logging.error(e) # Si ocurre un error no muestra el nombre del grupo de universidades
 
 
 default_args = {
