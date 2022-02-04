@@ -9,6 +9,8 @@ from airflow.operators.python import PythonOperator
 import pandas as pd
 import sqlalchemy
 
+#Establecemos la ruta al directorio local
+dir = os.path.dirname(__file__)
 
 #Se configura el formato de logging.ERROR
 log.basicConfig(level=log.ERROR,
@@ -23,11 +25,31 @@ default_args = {
 
 #Se coonfigura la conexión con la base de datos
 config = ConfigParser()
-config.read('config.cfg')
+config.read(f'{dir}/config.cfg')
 cfg = config["DBCONFIG"]
 engine = sqlalchemy.create_engine(
     f'postgresql+psycopg2://{cfg["_username"]}:{cfg["_password"]}@{cfg["_databasehost"]}:{cfg["_port"]}/{cfg["_databasename"]}')
 log.info('Conexión exitosa con la base de datos')
+
+def sql_query_extract():
+    '''
+    Lee la SQL query para las universidades B
+    Crea un DataFrame con Pandas
+    Exporta el df a un archivo csv dentro de la carpeta files
+    '''
+    try:
+        sql_path = f'{dir}/sql/universidades-b.sql'
+        csv_path = 'files/universidades-b.csv'
+        query = open(sql_path, 'r')
+        df = pd.read_sql_query(query.read(), con=engine)
+        # Creo carpeta files si no existe
+        if not os.path.exists(f"{dir}/files"):
+            os.makedirs(f"{dir}/files")
+        df.to_csv(csv_path)
+        query.close()
+        log.INFO('CSV creado con exito')
+    except Exception as e:
+        log.ERROR(e)
 
 with DAG(
     'dag-universities-b',
@@ -35,33 +57,10 @@ with DAG(
     schedule_interval='@hourly',
     start_date=datetime(2022, 1, 26)
 ) as dag:
-    def sql_query_extract():
-        '''
-        Lee la SQL query para las universidades B
-        Crea un DataFrame con Pandas
-        Exporta el df a un archivo csv dentro de la carpeta files
-        '''
-        try:
-            dir = os.path.dirname(__file__)
-            print(dir)
-            sql_path = f'{dir}/sql/universidades-b.sql'
-            csv_path = 'files/universidades-b.csv'
-            query = open(sql_path, 'r')
-            df = pd.read_sql_query(query.read(), con=engine)
-            # Creo carpeta files si no existe
-            if not os.path.exists(f"{dir}/files"):
-                os.makedirs(f"{dir}/files")
-            df.to_csv(csv_path)
-            query.close()
-            log.INFO('CSV creado con exito')
-        except Exception as e:
-            log.ERROR(e)
-
     sql_query = PythonOperator(
         task_id='sql_query',
         python_callable=sql_query_extract,
     )
-
     pandas_processing = DummyOperator(task_id='pandas_processing')
     data_load_S3 = DummyOperator(task_id='data_load_S3')
 
