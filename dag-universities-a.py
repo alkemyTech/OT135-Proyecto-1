@@ -15,11 +15,11 @@ logging.basicConfig(level=logging.ERROR,
                     datefmt='%Y-%m-%d')
 
 DIR = os.path.dirname(__file__)
-DB_USER = 'alkemy_super_user'
-DB_PASSWORD = 'JkG3Ymc3AZuu'
-DB_HOST = 'training-main.cghe7e6sfljt.us-east-1.rds.amazonaws.com'
-DB_NAME = 'training'
-DB_PORT = 5432
+DB_USER = config('DB_USER')
+DB_PASSWORD = config('DB_PASSWORD')
+DB_HOST = config('DB_HOST')
+DB_NAME = config('DB_NAME')
+DB_PORT = config('DB_PORT')
 QUERY = f"{DIR}/sql/universidades-e.sql"
 
 def query():
