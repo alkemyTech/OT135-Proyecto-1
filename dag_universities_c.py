@@ -6,8 +6,14 @@ import pandas as pd
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
+from decouple import config
+from sqlalchemy import exc
 
-import config
+DB_USER = config('DB_USER') 
+DB_PASSWORD = config('DB_PASSWORD') 
+DB_HOST = config('DB_HOST') 
+DB_PORT = config('DB_PORT') 
+DB_NAME = config('DB_NAME') 
 
 logging.basicConfig(level=logging.DEBUG, #previously ERROR
                     format='%(asctime)s - %(module)s - %(message)s',
@@ -16,22 +22,38 @@ logging.basicConfig(level=logging.DEBUG, #previously ERROR
 
 def extract_data():
     DIR = os.path.dirname(__file__)
-    PATH_TO_CSV_FILES = DIR + '\\files'
-    ARCHIVO = DIR + '\\sql\\universidades-c.sql'
-    os.makedirs(PATH_TO_CSV_FILES, exist_ok = True)
+    PATH_TO_CSV_FILES = DIR + '/files'
+    ARCHIVO = DIR + '/sql/universidades-c.sql'
+    try:
+        os.makedirs(PATH_TO_CSV_FILES, exist_ok=True)
+    except IOError as e:
+        logging.error('Error al crear los directorios: ' + str(e))
+        sys.exit('Ha ocurrido un error al crear los directorios')
     sql_connection = ('postgresql+psycopg2://'
-        + config.DB_USER
+        + DB_USER
         + ':'
-        + config.DB_PASSWORD
+        + DB_PASSWORD
         + '@'
-        + config.DB_HOST
+        + DB_HOST
         + '/'
-        + config.DB_NAME
+        + DB_NAME
     )
-    with open(ARCHIVO,'r') as sql_file:
-        sql_query = sql_file.read()
-    dataframe = pd.read_sql_query(sql_query,sql_connection)
-    dataframe.to_csv(PATH_TO_CSV_FILES + '\\universities_c.csv', encoding='utf-8-sig')
+    try:
+        with open(ARCHIVO,'r') as sql_file:
+            sql_query = sql_file.read()
+    except IOError as e:
+        logging.error('Error al leer los archivos sql: ' + str(e))
+        sys.exit('Ha ocurrido un error al leer los archivos SQL')
+    try:
+        dataframe = pd.read_sql_query(sql_query,sql_connection)
+    except exc.SQLAlchemyError:
+        logging.error('Error al conectar a la base de datos')
+        sys.exit('Error al conectar a la base de datos')
+    try:
+        dataframe.to_csv(PATH_TO_CSV_FILES + '/universities_c.csv', encoding='utf-8-sig', index=False)
+    except IOError as e:
+        logging.error('Error al crear los archivos csv: ' + str(e))
+        sys.exit('Ha ocurrido un error al crear los archivos csv')
 
 default_args = {
     'retries': 1,
