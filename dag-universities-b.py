@@ -39,7 +39,7 @@ def sql_query_extract():
     '''
     try:
         sql_path = f'{dir}/sql/universidades-b.sql'
-        csv_path = 'files/universidades-b.csv'
+        csv_path = f'{dir}/files/universidades-b.csv'
         query = open(sql_path, 'r')
         df = pd.read_sql_query(query.read(), con=engine)
         # Creo carpeta files si no existe
