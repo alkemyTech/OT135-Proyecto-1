@@ -58,10 +58,14 @@ def convert(dataframe,dict_to_location,dict_from_location):
     """
     dataframe.location = dataframe.location.fillna(dataframe.postal_code.map(dict_to_location))
     dataframe['location'] = dataframe['location'].str.upper()
+    dataframe['location'] = dataframe['location'].str.replace('_',' ')
+    dataframe['location'] = dataframe['location'].str.rstrip()
+    dataframe['location'] = dataframe['location'].str.lstrip()
     dataframe.postal_code = dataframe.postal_code.fillna(dataframe.location.map(dict_from_location))
     dataframe['location'] = dataframe['location'].str.lower()
     dataframe[['first_name', 'last_name']] = dataframe['full_name'].str.split(' ', 1, expand=True)
     dataframe.drop('full_name', axis=1, inplace=True)
+    dataframe.drop('birth_date', axis=1, inplace=True)
 
 def pandas_process():
     """
