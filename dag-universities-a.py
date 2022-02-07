@@ -1,4 +1,6 @@
+import os
 import logging
+import pandas as pd
 from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
@@ -11,6 +13,96 @@ default_args = {
     'retries': 1,
     'retry_delay': timedelta(minutes=5)
 }
+
+def age(birth_date):
+    """
+    Crea un dataframe normalizado de las locaciones culturales presentes en los archivos CSV
+    Inputs:
+        Fecha de nacimiento
+    Ouput
+        Cantidad de años cumplidos
+    """
+    today = date.today()
+    #Temporal
+    return today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+
+def clean_words(column):
+    """
+    Toma una columna de un dataframe y le saca guiones, espacios y demás
+    Inputs:
+        Columna de un dataframe
+    Ouput
+        Columna normalizada
+    """
+    column = column.str.lower()
+    column = column.str.replace('mr.','')
+    column = column.str.replace('ms.','')
+    column = column.str.replace(' dds','')
+    column = column.str.replace('mrs.','')
+    column = column.str.replace(' md','')
+    column = column.str.replace('dr.','')
+    column = column.str.replace('_',' ')
+    column = column.str.rstrip()
+    column = column.str.lstrip()
+    column = column.str.replace('-','')
+    column = column.str.replace('  ',' ')
+    return column
+
+def convert(dataframe,dict_to_location,dict_from_location):
+    """
+    Dado un dataframe, completa los datos faltantes en códigos postales y localidades
+    Inputs:
+        -
+    Ouput
+        -
+    """
+    dataframe.location = dataframe.location.fillna(dataframe.postal_code.map(dict_to_location))
+    dataframe['location'] = dataframe['location'].str.upper()
+    dataframe.postal_code = dataframe.postal_code.fillna(dataframe.location.map(dict_from_location))
+    dataframe['location'] = dataframe['location'].str.lower()
+    dataframe[['first_name', 'last_name']] = dataframe['full_name'].str.split(' ', 1, expand=True)
+    dataframe.drop('full_name', axis=1, inplace=True)
+
+def pandas_process():
+    """
+    Toma los datos de las universidades del CSV y las normaliza a un txt
+    Inputs:
+        -
+    Ouput
+        -
+    """
+
+    #Cargamos los archivos CSV necesarios
+    DIR = os.path.dirname(__file__)
+    ARCHIVO_CSV = DIR + '/files/universities_a.csv'
+    ARCHIVO_TXT = DIR + '/files/universities_a.txt'
+    CODIGOS_POSTALES = DIR + '/files/codigos_postales.csv'
+
+    #Leemos el datagrame indicando los tipos de datoas y parseos que hacen falta
+    dataframe = pd.read_csv(ARCHIVO_CSV,parse_dates=['birth_date'],dtype={'postal_code':str}, index_col=False)
+    #Creamos dos diccionarios para conocer las localidades y códigos postales
+    postal_code_to_location = pd.read_csv(CODIGOS_POSTALES, header=None, index_col=0).squeeze().to_dict()
+    location_to_postal_code = pd.read_csv(CODIGOS_POSTALES, header=None, index_col=1).squeeze().to_dict()
+
+    #Limpiamos los strings de espacios, guiones, prefijos y demás
+    dataframe['university'] = clean_words(dataframe['university'])
+    dataframe['career'] = clean_words(dataframe['career'])
+    dataframe['full_name'] = clean_words(dataframe['full_name'])
+    dataframe['email'] = clean_words(dataframe['email'])
+
+    #Convertimos el género al formato pedido
+    dataframe['gender'] = dataframe['gender'].str.replace('m','male')
+    dataframe['gender'] = dataframe['gender'].str.replace('f','female')
+
+    #Convertimos la fecha de nacimiento a edad
+    dataframe['age'] = dataframe['birth_date'].apply(age) #TODO pasar a Integer
+
+    #Obtenemos localidades y códigos postales
+    convert(dataframe,postal_code_to_location,location_to_postal_code)
+    #Sacamos el índice del txt final
+    dataframe.reset_index(drop=True, inplace=True)
+
+    dataframe.to_csv(ARCHIVO_TXT, encoding='utf-8-sig', index=False)
 
 # Instanciamos dag
 with DAG(
