@@ -79,7 +79,11 @@ def pandas_process():
     CODIGOS_POSTALES = DIR + '/files/codigos_postales.csv'
 
     #Leemos el datagrame indicando los tipos de datoas y parseos que hacen falta
-    dataframe = pd.read_csv(ARCHIVO_CSV,parse_dates=['birth_date'],dtype={'postal_code':str}, index_col=False)
+    try:
+        dataframe = pd.read_csv(ARCHIVO_CSV,parse_dates=['birth_date'],dtype={'postal_code':str}, index_col=False)
+    except IOError as e:
+        logging.error('Error al leer el csv, no se lo ha encontrado: ' + str(e))
+        sys.exit('No se encontró el archivo csv')
     #Creamos dos diccionarios para conocer las localidades y códigos postales
     postal_code_to_location = pd.read_csv(CODIGOS_POSTALES, header=None, index_col=0).squeeze().to_dict()
     location_to_postal_code = pd.read_csv(CODIGOS_POSTALES, header=None, index_col=1).squeeze().to_dict()
@@ -101,8 +105,12 @@ def pandas_process():
     convert(dataframe,postal_code_to_location,location_to_postal_code)
     #Sacamos el índice del txt final
     dataframe.reset_index(drop=True, inplace=True)
+    try:
+        dataframe.to_csv(ARCHIVO_TXT, encoding='utf-8-sig', index=False)
+    except IOError as e:
+        logging.error('Error al crear el archivo .txt: ' + str(e))
+        sys.exit('Ha ocurrido un error al crear el archvio .txt')
 
-    dataframe.to_csv(ARCHIVO_TXT, encoding='utf-8-sig', index=False)
 
 # Instanciamos dag
 with DAG(
