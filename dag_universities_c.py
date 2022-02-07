@@ -1,9 +1,23 @@
 import logging
+import os
 
 from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import PythonOperator
+import pandas as pd
 
+def csv_processing():
+    """
+    A function to be used as a pyhton operator to read the csv file and process later with pandas
+    """
+    dir = os.path.dirname(__file__)
+    try: 
+        df = pd.read_csv(f"{dir}/files/universidades-c.csv")
+        logging.info(df.head())
+    except Exception as e:
+        logging.error(e)
+        
 logging.basicConfig(level=logging.ERROR,
                     format='%(asctime)s - %(module)s - %(message)s', datefmt='%Y-%m-%d')
 
@@ -20,7 +34,10 @@ with DAG(
     start_date=datetime(2022, 1, 26)
 ) as dag:
     query_sql = DummyOperator(task_id='query_sql')
-    pandas_process = DummyOperator(task_id='pandas_process')
+    pandas_process = PythonOperator(
+        task_id='pandas_process',
+        python_callable=csv_processing
+        )
     load_S3 = DummyOperator(task_id='load_S3')
 
     query_sql >> pandas_process >> load_S3
