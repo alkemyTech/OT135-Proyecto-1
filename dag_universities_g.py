@@ -31,8 +31,8 @@ def sql_query_to_csv(PATH_SQL_FILE, PATH_CSV_FILE):
     con la base de datos, y luego lo exporta en formato csv.
 
     Args:
-        PATH_SQL_FILE (string): route to sql file
-        PATH_CSV_FILE (string): route to csv file
+        PATH_SQL_FILE (string): ruta al archivo sql
+        PATH_CSV_FILE (string): ruta al archivo csv
 
     Raises:
         e: si existe error en la conexión con la base de datos
