@@ -2,8 +2,10 @@ import os
 import logging
 import pandas as pd
 from datetime import timedelta, datetime
+from datetime import date
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import PythonOperator
 
 logging.basicConfig(level=logging.ERROR,
                     format='%(asctime)s - %(module)s - %(message)s',
@@ -23,7 +25,6 @@ def age(birth_date):
         Cantidad de años cumplidos
     """
     today = date.today()
-    #Temporal
     return today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
 
 def clean_words(column):
@@ -48,15 +49,17 @@ def clean_words(column):
     column = column.str.replace('  ',' ')
     return column
 
-def convert(dataframe,dict_to_location,dict_from_location):
+def convert(dataframe, dict_to_location, dict_from_location):
     """
     Dado un dataframe, completa los datos faltantes en códigos postales y localidades
     Inputs:
-        -
+        - Dataframe, diccionario de códigos a localidades y diccionario de localidades a códigos
     Ouput
         -
     """
+    #Uso de fillna para tomar todos los casos posibles de None, NaN, null y ''
     dataframe.location = dataframe.location.fillna(dataframe.postal_code.map(dict_to_location))
+    #Normalizamos la localidad para poder leer sin problemas del diccionario
     dataframe['location'] = dataframe['location'].str.upper()
     dataframe['location'] = dataframe['location'].str.replace('_',' ')
     dataframe['location'] = dataframe['location'].str.rstrip()
@@ -64,6 +67,7 @@ def convert(dataframe,dict_to_location,dict_from_location):
     dataframe.postal_code = dataframe.postal_code.fillna(dataframe.location.map(dict_from_location))
     dataframe['location'] = dataframe['location'].str.lower()
     dataframe[['first_name', 'last_name']] = dataframe['full_name'].str.split(' ', 1, expand=True)
+    #Drop las columnas no solicitadas
     dataframe.drop('full_name', axis=1, inplace=True)
     dataframe.drop('birth_date', axis=1, inplace=True)
 
@@ -78,16 +82,16 @@ def pandas_process():
 
     #Cargamos los archivos CSV necesarios
     DIR = os.path.dirname(__file__)
-    ARCHIVO_CSV = DIR + '/files/universities_a.csv'
-    ARCHIVO_TXT = DIR + '/files/universities_a.txt'
-    CODIGOS_POSTALES = DIR + '/files/codigos_postales.csv'
+    ARCHIVO_CSV = f'{DIR}/files/universities_a.csv'
+    ARCHIVO_TXT = f'{DIR}/files/universities_a.txt'
+    CODIGOS_POSTALES = f'{DIR}/files/codigos_postales.csv'
 
     #Leemos el datagrame indicando los tipos de datoas y parseos que hacen falta
     try:
-        dataframe = pd.read_csv(ARCHIVO_CSV,parse_dates=['birth_date'],dtype={'postal_code':str}, index_col=False)
+        dataframe = pd.read_csv(ARCHIVO_CSV, parse_dates=['birth_date'], dtype={'postal_code': str}, index_col=False)
     except IOError as e:
-        logging.error('Error al leer el csv, no se lo ha encontrado: ' + str(e))
-        sys.exit('No se encontró el archivo csv')
+        logging.error(f'Error al leer el csv, no se lo ha encontrado: {e}')
+        raise Exception('No se encontró el archivo csv')
     #Creamos dos diccionarios para conocer las localidades y códigos postales
     postal_code_to_location = pd.read_csv(CODIGOS_POSTALES, header=None, index_col=0).squeeze().to_dict()
     location_to_postal_code = pd.read_csv(CODIGOS_POSTALES, header=None, index_col=1).squeeze().to_dict()
@@ -99,22 +103,20 @@ def pandas_process():
     dataframe['email'] = clean_words(dataframe['email'])
 
     #Convertimos el género al formato pedido
-    dataframe['gender'] = dataframe['gender'].str.replace('m','male')
-    dataframe['gender'] = dataframe['gender'].str.replace('f','female')
+    dataframe['gender'] = dataframe['gender'].str.replace('m', 'male')
+    dataframe['gender'] = dataframe['gender'].str.replace('f', 'female')
 
     #Convertimos la fecha de nacimiento a edad
-    dataframe['age'] = dataframe['birth_date'].apply(age) #TODO pasar a Integer
-
+    dataframe['age'] = dataframe['birth_date'].apply(age)
     #Obtenemos localidades y códigos postales
-    convert(dataframe,postal_code_to_location,location_to_postal_code)
+    convert(dataframe, postal_code_to_location, location_to_postal_code)
     #Sacamos el índice del txt final
     dataframe.reset_index(drop=True, inplace=True)
     try:
         dataframe.to_csv(ARCHIVO_TXT, encoding='utf-8-sig', index=False)
     except IOError as e:
-        logging.error('Error al crear el archivo .txt: ' + str(e))
-        sys.exit('Ha ocurrido un error al crear el archvio .txt')
-
+        logging.error(f'Error al crear el archivo TXT: {e}')
+        raise Exception('Ha ocurrido un error al crear el archivo TXT')
 
 # Instanciamos dag
 with DAG(
@@ -125,7 +127,10 @@ with DAG(
     start_date=datetime(2022, 1, 26),
 ) as dag:
     query_sql = DummyOperator(task_id='query_sql') # Consulta SQL
-    pandas_process = DummyOperator(task_id='pandas_process') # Procesar datos con pandas
+    pandas_process = PythonOperator(
+        task_id = 'pandas_process',
+        python_callable = pandas_process
+        ) # Procesar datos con pandas
     load_S3 = DummyOperator(task_id='load_S3') # Carga de datos en S3
 
     query_sql >> pandas_process >> load_S3
