@@ -9,35 +9,17 @@ import pandas as pd
 import sqlalchemy
 from decouple import config
 
-#Se configura el formato de logging.ERROR
+# Se configura el formato de logging.ERROR
 log.basicConfig(level=log.ERROR,
                 format='%(asctime)s - %(processName)s - %(message)s',
                 datefmt='%Y-%m-%d')
 
-#Establecemos la ruta al directorio local
-dir = os.path.dirname(__file__)
-
-#Se configura la cantidad de reintentos en caso de que el DAG falle
+# Se configura la cantidad de reintentos en caso de que el DAG falle
 default_args = {
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
 }
 
-# Parámetros de la base de datos
-DB_USER = config("DB_USER")
-DB_PASSWORD = config("DB_PASSWORD")
-DB_HOST = config("DB_HOST")
-DB_PORT = config("DB_PORT")
-DB_NAME = config("DB_NAME")
-
-#Se coonfigura la conexión con la base de datos
-try:
-    engine = sqlalchemy.create_engine(
-    f'postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
-    log.info('Conexión exitosa con la base de datos')
-except Exception as e:
-        log.error(e)
-        raise e
 
 def sql_query_extract():
     '''
@@ -45,6 +27,25 @@ def sql_query_extract():
     Crea un DataFrame con Pandas
     Exporta el df a un archivo csv dentro de la carpeta files
     '''
+    # Establecemos la ruta al directorio local
+    dir = os.path.dirname(__file__)
+
+    # Parámetros de la base de datos
+    DB_USER = config("DB_USER")
+    DB_PASSWORD = config("DB_PASSWORD")
+    DB_HOST = config("DB_HOST")
+    DB_PORT = config("DB_PORT")
+    DB_NAME = config("DB_NAME")
+
+    # Se coonfigura la conexión con la base de datos
+    try:
+        engine = sqlalchemy.create_engine(
+            f'postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
+        log.info('Conexión exitosa con la base de datos')
+    except Exception as e:
+        log.error(e)
+        raise e
+    #Se lee .sql y se exporta con csv
     try:
         with open(f'{dir}/sql/universidades-b.sql', 'r') as query:
             df = pd.read_sql_query(query.read(), con=engine)
@@ -55,6 +56,7 @@ def sql_query_extract():
     except Exception as e:
         log.error(e)
         raise e
+
 
 with DAG(
     'dag-universities-b',
