@@ -22,16 +22,19 @@ DB_PORT = config('DB_PORT')
 # Conexion a la base de datos
 engine = create_engine(f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
 
-'''
+def extract():
+    '''
     Ejecuta una consulta SQL y almacena
     el resultado en la carpeta files con formato csv
-'''
-def extract():
+    '''
     route = os.path.dirname(__file__)
     file_sql = f'{route}/sql/universidades-f.sql'
     with open(file_sql, 'r') as query:
         sql_query = query.read()
-    df = pd.read_sql_query(sql_query, engine)
+    df = pd.read_sql_query(sql_query, engine)        
+    # Pregunto si la carpeta existe y sino la crea 
+    if not(os.path.exists(f"{route}/files")):
+        os.makedirs(f"{route}/files")        
     df.to_csv(f'{route}/files/universities-f.csv')
 
 with DAG(
