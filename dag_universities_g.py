@@ -26,7 +26,7 @@ PATH_SQL_FILE = f'{DIR}/sql/universidades-g.sql'
 PATH_CSV_FILE = f"{DIR}/files/universidades-g.csv"
 
 
-def sql_query_to_csv(PATH_SQL_FILE):
+def sql_query_to_csv(PATH_SQL_FILE, PATH_CSV_FILE):
     """Lee la consulta del archivo sql en formato de DataFrame a través de la conexión realizada
     con la base de datos, y luego lo exporta en formato csv.
 
@@ -79,7 +79,7 @@ with DAG(
     extract = PythonOperator(
         task_id='extract',
         python_callable=sql_query_to_csv,
-        op_args=[PATH_SQL_FILE]
+        op_args=[PATH_SQL_FILE, PATH_CSV_FILE]
     ) # extract from sql
     transform = DummyOperator(task_id='transform') # transform with pandas
     load = DummyOperator(task_id='load') # load to s3
