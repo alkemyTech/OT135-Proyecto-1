@@ -20,7 +20,6 @@ DB_HOST = config('DB_HOST')
 DB_PORT = config('DB_PORT') 
 DB_NAME = config('DB_NAME') 
 
-
 def extract_data():
     DIR = os.path.dirname(__file__)
     PATH_TO_CSV_FILES =  f'{DIR}/files'
