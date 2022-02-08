@@ -32,6 +32,11 @@ def sql_query_to_csv(PATH_SQL_FILE, PATH_CSV_FILE):
 
     Args:
         PATH_SQL_FILE (string): route to sql file
+        PATH_CSV_FILE (string): route to csv file
+
+    Raises:
+        e: si existe error en la conexión con la base de datos
+        e: si existe error en la lectura del archivo .sql o en la exportación del archivo .csv
     """
     
     DB_USER = config("DB_USER")
