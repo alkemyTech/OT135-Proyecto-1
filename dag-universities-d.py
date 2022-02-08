@@ -1,12 +1,14 @@
-from lib2to3.pgen2.pgen import DFAState
 import logging
 import os
 from datetime import timedelta, datetime
+
+import pandas as pd
+from decouple import config
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
-from decouple import config
-import pandas as pd
+from lib2to3.pgen2.pgen import DFAState
+import boto3
 
 #logger configuration
 logger = logging.getLogger(__name__)
@@ -35,7 +37,7 @@ def extract_process():
             df = pd.read_sql(sql.read(), f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
         except FileNotFoundError as ex:    
             logger.error("sorry the file doesn't exist")
-	    raise ex
+            raise ex # Me tiraba error de indentación
         else:
             os.makedirs(f"{home}/files", exist_ok = True)
             df.to_csv(f"{home}/files/universidades-d.csv")
@@ -43,6 +45,19 @@ def extract_process():
 
 #UNIVERSIDADES = 'Universidad Tecnológica Nacional / Universidad Nacional De Tres De Febrero'
 
+def load_s3():
+    DIR = os.path.dirname(__file__)
+    FILE = f'{DIR}/files/universidad3defebrero.txt'
+    logger.info(FILE)
+    BUCKET_NAME = config('BUCKET_NAME')
+    PUBLIC_KEY = config('PUBLIC_KEY')
+    SECRET_KEY = config('SECRET_KEY')
+    s3 = boto3.resource('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
+    try:
+        s3.Bucket(BUCKET_NAME).upload_file(FILE, SECRET_KEY)
+    except Exception as e:
+        logger.error(f'Ocurrió un error: {e}')
+        raise e
 
 #Se configuran los retries para todo el dag
 default_args = {
@@ -60,6 +75,9 @@ with DAG(
         python_callable=extract_process
     )
     process = DummyOperator(task_id='process')
-    load = DummyOperator(task_id='load')
+    load = PythonOperator(
+        task_id='load',
+        python_callable=load_s3
+    )
 
     extract_data >> process >> load
