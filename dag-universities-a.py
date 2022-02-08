@@ -31,9 +31,7 @@ def query():
             os.makedirs(f'{DIR}/files', exist_ok=True)
             df_query.to_csv(f'{DIR}/files/universities-a.csv')
     except Exception as e:
-        logger.error('''Hubo un error en la consulta sql en las tablas
-                     de la  Universidad De Flores y/o la Universidad Nacional De 
-                     Villa María''')
+        logger.error('''Hubo un error en la consulta sql en las tablas de la  Universidad De Flores y/o la Universidad Nacional De Villa María''')
         raise e
 
 default_args = {
