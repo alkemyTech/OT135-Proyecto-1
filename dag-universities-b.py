@@ -57,6 +57,52 @@ def sql_query_extract():
         log.error(e)
         raise e
 
+def pandas_function():
+    """
+    Function to be used as a PythonOperator to process the data information from the csv generated with sql_query_extract
+    """
+    try:
+        df=pd.read_csv(f"{dir}/files/universidades-b.csv")
+        #setting zipcodes and locations as a DataFrame
+        cp=pd.read_csv(f"{dir}/files/codigos_postales.csv")
+    except ValueError:
+        log.error("an error has ocurred, check the path and files you are trying to open are correct")
+    finally:
+        df=df.drop("Unnamed: 0",axis=1)
+        log.info("DataFrame has been created")
+        cp.rename(columns = {"codigo_postal": "postal_code", "localidad":"location"} ,inplace = True)
+        log.info("postal codes and location dataframe has been loaded")
+    #making strings lowercase
+    df["university"] = df["university"].str.lower()
+    df["career"] = df["career"].str.lower()
+    df["full_name"] = df["full_name"].str.lower()
+    df["gender"] = df["gender"].str.lower()
+    df["location"] = df["location"].str.lower()
+    df["email"] = df["email"].str.lower()
+    cp["location"] = cp["location"].str.lower()
+    #calculating age
+    df['date_of_birth'] = df['date_of_birth'].apply(lambda x: datetime.strptime(x,'%Y-%m-%d'))
+    now = pd.Timestamp('now')
+    df['age'] = (now - df['date_of_birth']).astype('<m8[Y]')
+    #eliminating '_' and salutations from name
+    for column in list(df):
+        df[f"{column}"] = df[f"{column}"].replace(['_',],' ', regex=True)
+    df["full_name"] = df["full_name"].replace(['mrs\. ', 'mr\. ', 'ms\. ', 'dr\. ', 'miss ', 'mister '],'', regex=True)
+    #splitting first and last name
+    df['first_name'] = df['full_name'].str.split(' ').str[0]
+    df['last_name'] = df['full_name'].str.split(' ').str[1]
+    #merging location by zipcode
+    df = df.merge(cp, on='postal_code', how='left')
+    df['location'] = df['location_y'].fillna(df['location_x'])
+    df = df.drop(['location_y', 'location_x'], axis=1)
+    #merging zipcode by location
+    cp.drop_duplicates(subset='location', inplace = True)
+    df = df.merge(cp, on='location', how='left')
+    df['postal_code'] = df['postal_code_y'].fillna(df['postal_code_x'])
+    df = df.drop(['postal_code_y', 'postal_code_x'], axis=1)
+    #reordering columns and creating .txt file
+    df = df.reindex(columns=['university','career','first_name','last_name','gender','age','postal_code','location'])
+    df.to_csv(f'{dir}/files/universidades-b.txt',index=False)
 
 with DAG(
     'dag-universities-b',
