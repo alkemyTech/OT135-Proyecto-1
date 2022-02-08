@@ -10,7 +10,7 @@ import sqlalchemy
 from decouple import config
 
 # Se configura el formato de logging.ERROR
-log.basicConfig(level=log.ERROR,
+log.basicConfig(level=log.DEBUG,
                 format='%(asctime)s - %(processName)s - %(message)s',
                 datefmt='%Y-%m-%d')
 
@@ -62,12 +62,12 @@ def pandas_function():
     Function to be used as a PythonOperator to process the data information from the csv generated with sql_query_extract
     """
     try:
-        df=pd.read_csv(f"{dir}/files/universidades-b.csv")
+        df=pd.read_csv(f'{dir}/files/universidades-b.csv')
         #setting zipcodes and locations as a DataFrame
         cp=pd.read_csv(f"{dir}/files/codigos_postales.csv")
-    except ValueError:
+    except FileNotFoundError:
         log.error("an error has ocurred, check the path and files you are trying to open are correct")
-    finally:
+    else:
         df=df.drop("Unnamed: 0",axis=1)
         log.info("DataFrame has been created")
         cp.rename(columns = {"codigo_postal": "postal_code", "localidad":"location"} ,inplace = True)
@@ -112,9 +112,12 @@ with DAG(
 ) as dag:
     sql_query = PythonOperator(
         task_id='sql_query',
-        python_callable=sql_query_extract,
+        python_callable=sql_query_extract
     )
-    pandas_processing = DummyOperator(task_id='pandas_processing')
+    pandas_processing = PythonOperator(
+        task_id='pandas_processing',
+        python_callable = pandas_function
+    )
     data_load_S3 = DummyOperator(task_id='data_load_S3')
 
     sql_query >> pandas_processing >> data_load_S3
