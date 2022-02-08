@@ -1,7 +1,6 @@
 *.cfg
-*.env
 !template.cfg
+*.env
 !template.env
 *.csv
-/files
 __pycache__
