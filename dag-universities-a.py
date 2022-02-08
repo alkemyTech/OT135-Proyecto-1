@@ -1,5 +1,5 @@
 import os
-import logging as log
+import logging
 from datetime import timedelta, datetime
 from decouple import config
 import pandas as pd
@@ -9,7 +9,8 @@ from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 
-log.basicConfig(level=log.ERROR,
+logger = logging.getLogger()
+logging.basicConfig(level=logging.ERROR,
                     format='%(asctime)s - %(module)s - %(message)s',
                     datefmt='%Y-%m-%d')
 
@@ -30,6 +31,9 @@ def query():
             os.makedirs(f'{DIR}/files', exist_ok=True)
             df_query.to_csv(f'{DIR}/files/universities-a.csv')
     except Exception as e:
+        logger.error('''Hubo un error en la consulta sql en las tablas
+                     de la  Universidad De Flores y/o la Universidad Nacional De 
+                     Villa María''')
         raise e
 
 default_args = {
