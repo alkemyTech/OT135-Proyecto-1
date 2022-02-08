@@ -28,24 +28,25 @@ DB_PORT = config('DB_PORT')
 
 route = os.path.dirname(__file__)
 
-SQL_SCRIPT = f'{route}sql/universidades-e.sql'
-
-engine = create_engine(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(), echo=False, client_encoding='utf8')
-logger.info('successfully connection')
+SQL_SCRIPT = f'{route}/sql/universidades-e.sql'
 
 def extract():
     '''Toma la conexion a la base de datos engine y a partir del sql.script
     definido ejecuta sus queries sobre la base de datos y lo guarda como un
     archivo csv'''
+    engine = create_engine(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(), echo=False, client_encoding='utf8')
+    logger.info('successfully connection')
+    logger.info(f'FILE NAME {SQL_SCRIPT}')
     try:
         with open (SQL_SCRIPT, 'r') as query:
            df_query = pd.read_sql_query(query.read(), engine)
            logger.info('sql successfully executed')
+           os.makedirs(r'./files', exist_ok=True)
            df_query.to_csv(f'{route}/files/universities-e.csv')
            logger.info('csv successfully save')
-    except Exception as e:
-        logger.error(e)
-
+    except Exception as ex:
+        logger.error(ex)
+        raise ex
 
 with DAG(
     'dag-universities-e',
