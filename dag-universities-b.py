@@ -49,13 +49,13 @@ def sql_query_extract():
         query = open(f'{dir}/sql/universidades-b.sql', 'r')
         df = pd.read_sql_query(query.read(), con=engine)
         # Creo carpeta files si no existe
-        if not os.path.exists(f"{dir}/files"):
-            os.makedirs(f"{dir}/files")
+        os.makedirs(f"{dir}/files", exist_ok=False)
         df.to_csv(f'{dir}/files/universidades-b.csv')
         query.close()
         log.info('CSV creado con exito')
     except Exception as e:
         log.error(e)
+        raise e
 
 with DAG(
     'dag-universities-b',
