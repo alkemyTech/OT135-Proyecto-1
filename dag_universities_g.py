@@ -17,37 +17,46 @@ logging.basicConfig(
         datefmt = '%Y-%m-%d'
 )
 
-# Ruta a directorio local
-dir = os.path.dirname(__file__)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
-# Parámetros de la base de datos
-DB_USER = config("DB_USER")
-DB_PASSWORD = config("DB_PASSWORD")
-DB_HOST = config("DB_HOST")
-DB_PORT = config("DB_PORT")
-DB_NAME = config("DB_NAME")
 
-# Conexión con base de datos
-try:
-    path_connection = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-    engine = create_engine(path_connection, pool_size=1)
-except Exception as error:
-    logging.error(error)
-    
-def sql_query_to_csv():
-    '''Lee la consulta del archivo sql en formato de DataFrame a través de la conexión realizada
+DIR = os.path.dirname(__file__)
+PATH_SQL_FILE = f'{DIR}/sql/universidades-g.sql'
+PATH_CSV_FILE = f"{DIR}/files/universidades-g.csv"
+
+
+def sql_query_to_csv(PATH_SQL_FILE):
+    """Lee la consulta del archivo sql en formato de DataFrame a través de la conexión realizada
     con la base de datos, y luego lo exporta en formato csv.
-    '''
+
+    Args:
+        PATH_SQL_FILE (string): route to sql file
+    """
+    
+    DB_USER = config("DB_USER")
+    DB_PASSWORD = config("DB_PASSWORD")
+    DB_HOST = config("DB_HOST")
+    DB_PORT = config("DB_PORT")
+    DB_NAME = config("DB_NAME")
+
+    # Conexión con base de datos
     try:
-        sql_file = open(f'{dir}/sql/universidades-g.sql', "r")
-        df_read = pd.read_sql(sql_file.read(), engine)
-        if not os.path.exists(f"{dir}/files"):
-            # Creo carpeta files si no existe
-            os.makedirs(f"{dir}/files")
-        df_read.to_csv(f"{dir}/files/universidades-g.csv")
-        logging.info("csv file successfully exported")
-    except Exception as error:
-        logging.error(error)
+        path_connection = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        engine = create_engine(path_connection, pool_size=1)
+    except Exception as e:
+        logger.error(e)
+        raise e
+
+    try:
+        with open(PATH_SQL_FILE, "r") as sql_file:
+            df_read = pd.read_sql(sql_file.read(), engine)
+        os.makedirs(f"{DIR}/files", exist_ok= True)
+        df_read.to_csv(PATH_CSV_FILE)
+        logger.info("csv file successfully exported")
+    except Exception as e:
+        logger.error(e)
+        raise e
 
 
 default_args = {
@@ -69,7 +78,8 @@ with DAG(
 )as dag:
     extract = PythonOperator(
         task_id='extract',
-        python_callable=sql_query_to_csv
+        python_callable=sql_query_to_csv,
+        op_args=[PATH_SQL_FILE]
     ) # extract from sql
     transform = DummyOperator(task_id='transform') # transform with pandas
     load = DummyOperator(task_id='load') # load to s3
