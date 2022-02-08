@@ -3,7 +3,7 @@ from datetime import timedelta, datetime
 import os
 
 from airflow import DAG
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 import pandas as pd
@@ -12,7 +12,7 @@ from decouple import config
 
 
 log.basicConfig(
-    level=log.ERROR,
+    level=log.INFO,
     format='%(asctime)s - %(module)s - %(message)s',
     datefmt='%Y-%m-%d'
 )
