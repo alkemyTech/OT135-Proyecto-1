@@ -112,21 +112,16 @@ def data_nomalization():
     df_cod_postales['localidad'] = df_cod_postales['localidad'].str.lower()
     #Renombramos las columnas para que coincidan con las de df
     df_cod_postales = df_cod_postales.rename(columns={'codigo_postal':'postal_code', 'localidad':'location'})
-    #Hacemos un merge left entr df y df_cod_postal
-    df_merged = pd.merge(left=df,right=df_cod_postales, how='left', on='postal_code')
-    df_merged.location_x = df_merged.location_x.fillna(df_merged.location_y)
-    #Eliminamos la columna location_y
-    df_merged = df_merged.drop(['location_y'], axis=1)
-    #Renombramos la columna location_x para que nos coincida con df_cod_postales
-    df_merged = df_merged.rename(columns={'location_x':'location'})
-    #Hacemos un merge left entr df_merged y df_cod_postal
-    df_merged_2 = pd.merge(left=df_merged,right=df_cod_postales, how='left', on='location')
-    df_merged_2.postal_code_x = df_merged_2.postal_code_x.fillna(df_merged_2.postal_code_y)
-    #Eliminamos la columna psotal_code_y
-    df_merged_2 = df_merged_2.drop(['postal_code_y'], axis=1)
-    #Renombramos la columna de códigos postales
-    df_merged_2 = df_merged_2.rename(columns={'postal_code_x':'postal_code'})
-    df = df_merged_2
+    # Hago un merge de ambos dataframes para obtener localidades
+    merge_location = pd.merge(df, df_cod_postales, how="left", on="postal_code")
+    merge_location.location_x = merge_location.location_x.fillna(merge_location.location_y)
+    df.location = merge_location.location_x
+    # Elimino duplicados de df_codigos_postales
+    df_codigos_postales = df_cod_postales.drop_duplicates(['location'], keep='first')
+    # Hago otro merge de ambos dataframes para obtener codigos postales
+    merge_codes = pd.merge(df, df_codigos_postales, how="left", on="location")
+    merge_codes.postal_code_x = merge_codes.postal_code_x.fillna(merge_codes.postal_code_y)
+    df.postal_code = merge_codes.postal_code_x
     #Transformamos los valores de la postal_code en int
     df['postal_code'] = df.postal_code.astype(int)
 
