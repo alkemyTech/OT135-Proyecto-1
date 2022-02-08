@@ -8,46 +8,46 @@ from airflow.operators.python import PythonOperator
 from decouple import config
 import pandas as pd
 
+#logger configuration
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(module)s - %(message)s',
+    datefmt='%Y-%m-%d',
+    )
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter) 
+logger.addHandler(stream_handler)
+
+#database connection
+DB_USER = config('DB_USER')
+DB_PASSWORD = config('DB_PASSWORD')
+DB_HOST = config('DB_HOST')
+DB_PORT = config('DB_PORT')
+PSQL_DB = config('PSQL_DB')
+
 def extract_process():
     """
     Function to be used as a PythonOperator callable funtion to extract the data from the sql file and save it as a CSV 
     """
     home = os.path.dirname(__file__)
-    sql = open(f'{home}/sql/universidades-d.sql', 'r').read()
-    df = pd.read_sql(f"{sql}", f'postgresql://{user}:{passwd}@{host}:{port}/{db}')
-    
-    try:
-        if os.path.exists(f"{home}/files") == False:
-            os.makedirs(f"{home}/files")
-        df.to_csv(f"{home}/files/universidades-d.csv")
-        logging.info('csv file created correctly')
-    except Exception as e:
-        logging.error(e)
-
-
-#database connection
-user = config('DB_USER')
-passwd = config('DB_PASSWORD')
-host = config('DB_HOST')
-port = config('DB_PORT')
-db = config('PSQL_DB')
-
+    with open(f'{home}/sql/universidades-d.sql', 'r') as sql: 
+        try:
+            df = pd.read_sql(sql.read(), f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{PSQL_DB}')
+        except FileNotFoundError:    
+            logger.error("sorry the file doesn't exist") 
+        else:
+            os.makedirs(f"{home}/files",mode = 0o777, exist_ok = False)
+            df.to_csv(f"{home}/files/universidades-d.csv")
+            logger.info('csv file created correctly')
 
 #UNIVERSIDADES = 'Universidad Tecnológica Nacional / Universidad Nacional De Tres De Febrero'
-logging.basicConfig(
-    level = logging.DEBUG,
-    format='%(asctime)s - %(module)s - %(message)s',
-    datefmt='%Y-%m-%d',
-    )
-#logger = logging.getLogger()
-#logger.error('Iniciando DAG / Mensaje de error')
+
 
 #Se configuran los retries para todo el dag
 default_args = {
 	'retries': 5,
 	'retry_delay': timedelta(minutes=1),
 }
-
 with DAG(
     'dag-universities-d',
     description='Configuración de un DAG para el grupo de universidades d',
