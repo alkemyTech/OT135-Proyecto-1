@@ -1,7 +1,6 @@
 import os
-import logging
+import logging as log
 from datetime import timedelta, datetime
-from shutil import ExecError
 from decouple import config
 import pandas as pd
 from sqlalchemy import create_engine
@@ -10,31 +9,28 @@ from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 
-logging.basicConfig(level=logging.ERROR,
+log.basicConfig(level=log.ERROR,
                     format='%(asctime)s - %(module)s - %(message)s',
                     datefmt='%Y-%m-%d')
 
-DIR = os.path.dirname(__file__)
-DB_USER = config('DB_USER')
-DB_PASSWORD = config('DB_PASSWORD')
-DB_HOST = config('DB_HOST')
-DB_NAME = config('DB_NAME')
-DB_PORT = config('DB_PORT')
-QUERY = f"{DIR}/sql/universidades-e.sql"
-
 def query():
     try:
-        engine = create_engine(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(),
+        DIR = os.path.dirname(__file__)
+        DB_USER = config('DB_USER')
+        DB_PASSWORD = config('DB_PASSWORD')
+        DB_HOST = config('DB_HOST')
+        DB_NAME = config('DB_NAME')
+        DB_PORT = config('DB_PORT')
+        QUERY = f"{DIR}/sql/universidades-a.sql"
+        with open(QUERY, 'r') as query:
+            engine = create_engine(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
                                echo=False, 
                                client_encoding='utf8')
-        query = open(QUERY, 'r')
-        df_query = pd.read_sql_query(query.read(), engine)
-        if not os.path.exists(f'{DIR}/files'):
-            os.makedirs(f'{DIR}/files')
-        df_query.to_csv(f'{DIR}/files/universities-e.csv')
+            df_query = pd.read_sql_query(query.read(), engine)
+            os.makedirs(f'{DIR}/files', exist_ok=True)
+            df_query.to_csv(f'{DIR}/files/universities-a.csv')
     except Exception as e:
-        logging.error(e) # Si ocurre un error no muestra el nombre del grupo de universidades
-
+        raise e
 
 default_args = {
     'retries': 1,
