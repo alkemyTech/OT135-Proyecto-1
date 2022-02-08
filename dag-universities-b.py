@@ -9,13 +9,13 @@ import pandas as pd
 import sqlalchemy
 from decouple import config
 
-#Establecemos la ruta al directorio local
-dir = os.path.dirname(__file__)
-
 #Se configura el formato de logging.ERROR
 log.basicConfig(level=log.ERROR,
                 format='%(asctime)s - %(processName)s - %(message)s',
                 datefmt='%Y-%m-%d')
+
+#Establecemos la ruta al directorio local
+dir = os.path.dirname(__file__)
 
 #Se configura la cantidad de reintentos en caso de que el DAG falle
 default_args = {
@@ -37,6 +37,7 @@ try:
     log.info('Conexión exitosa con la base de datos')
 except Exception as e:
         log.error(e)
+        raise e
 
 def sql_query_extract():
     '''
