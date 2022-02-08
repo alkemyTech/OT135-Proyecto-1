@@ -5,7 +5,6 @@ from datetime import timedelta, datetime
 from datetime import date
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
-from airflow.operators.python import PythonOperator
 
 logging.basicConfig(level=logging.ERROR,
                     format='%(asctime)s - %(module)s - %(message)s',
@@ -127,10 +126,7 @@ with DAG(
     start_date=datetime(2022, 1, 26),
 ) as dag:
     query_sql = DummyOperator(task_id='query_sql') # Consulta SQL
-    pandas_process = PythonOperator(
-        task_id = 'pandas_process',
-        python_callable = pandas_process
-        ) # Procesar datos con pandas
+    pandas_process = DummyOperator(task_id='pandas_process') # Procesar datos con pandas
     load_S3 = DummyOperator(task_id='load_S3') # Carga de datos en S3
 
     query_sql >> pandas_process >> load_S3
