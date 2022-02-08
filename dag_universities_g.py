@@ -81,8 +81,9 @@ def transform():
     df['university'] = df['university'].str.lstrip(' ')
     df['career'] = df['career'].str.lower().str.replace('-',' ')
     df['career'] = df['career'].str.rstrip(' ').str.lstrip(' ')
-    WORDS = ['dr.','mr.','mrs.','hill','md','phd','ii','iii','md','dvm','phd','dds','iv','ms.']
+    WORDS = ['dr.','mr.','mrs.-','hill','md','phd','ii','iii','md','dvm','phd','dds','iv','ms.']
     df.full_name.replace(WORDS,'', regex=True, inplace=True)
+    df['full_name'] = df['full_name'].str.lstrip('.')
     df['full_name'] = df['full_name'].str.lstrip('-')
     df['first_name'] = df['full_name'].str.lower().str.split('-', expand=True)[0]
     df['last_name'] = df['full_name'].str.lower().str.split('-', expand=True)[1]
@@ -106,8 +107,7 @@ def transform():
         dfaux.drop_duplicates(subset=['localidad']).astype(str),
         how="left",
         left_on='adress',
-        right_on='localidad',
-        validate='many_to_many'
+        right_on='localidad'
     )
     df['postal_code'] = mrge1['zipcode'].replace('nan','') + mrge2['codigo_postal'].replace(np.NaN,'')
     df['location'] = (mrge1['localidad'].replace(np.NaN,'') + mrge2['localidad']).str.lower()
@@ -123,6 +123,8 @@ def transform():
 
     try:
         os.makedirs(f'{DIR}/txt', exist_ok= True)
+        mrge1.to_csv(f'{DIR}/txt/mrge1', index=None)
+        mrge2.to_csv(f'{DIR}/txt/mrge2', index=None)
         df.to_csv(f'{DIR}/txt/df', index=None)
         df_kennedy.to_csv(f'{DIR}/txt/universidad-j-f-kennedy.txt', index=None)
         df_latinoamericana.to_csv(f'{DIR}/txt/facultad_latinoamericana_de_ciencias_sociales.txt', index=None)
