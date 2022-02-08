@@ -1,0 +1,6 @@
+*.cfg
+!template.cfg
+*.env
+!template.env
+*.csv
+__pycache__
