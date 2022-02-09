@@ -72,7 +72,11 @@ def data_nomalization():
     dir = os.path.dirname(__file__)
 
     # Leemos el archivo .csv con Pandas
-    df = pd.read_csv(f'{dir}/files/universidades-h.csv')
+    try:
+        df = pd.read_csv(f'{dir}/files/universidades-h.csv')
+    except Exception as e:
+        log.error(e)
+        raise e
 
     # Elimino la columna unnamed del dataframe
     df = df.drop(['Unnamed: 0'], axis=1)
@@ -117,7 +121,11 @@ def data_nomalization():
     df = df.drop(['birth_date'], axis=1)
 
     # Leemos el archivo .csv con los codigos postales y las localidades con Pandas
-    df_cod_postales = pd.read_csv(f'{dir}/files/codigos_postales.csv')
+    try:
+        df_cod_postales = pd.read_csv(f'{dir}/files/codigos_postales.csv')
+    except Exception as e:
+        log.error(e)
+        raise e
     # Nos quedamos con solo un código postal por localidad
     df_cod_postales = df_cod_postales.drop_duplicates(
         ['localidad'], keep='first')
