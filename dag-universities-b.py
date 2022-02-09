@@ -20,6 +20,8 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
+# Establecemos la ruta al directorio local
+dir = os.path.dirname(__file__)
 
 def sql_query_extract():
     '''
@@ -27,9 +29,6 @@ def sql_query_extract():
     Crea un DataFrame con Pandas
     Exporta el df a un archivo csv dentro de la carpeta files
     '''
-    # Establecemos la ruta al directorio local
-    dir = os.path.dirname(__file__)
-
     # Parámetros de la base de datos
     DB_USER = config("DB_USER")
     DB_PASSWORD = config("DB_PASSWORD")
@@ -66,7 +65,7 @@ def pandas_function():
         #setting zipcodes and locations as a DataFrame
         cp=pd.read_csv(f"{dir}/files/codigos_postales.csv")
     except FileNotFoundError:
-        log.error("an error has ocurred, check the path and files you are trying to open are correct")
+        log.error("the path or the file you selected is incorrect please check and try again")
     else:
         df=df.drop("Unnamed: 0",axis=1)
         log.info("DataFrame has been created")
@@ -114,10 +113,7 @@ with DAG(
         task_id='sql_query',
         python_callable=sql_query_extract
     )
-    pandas_processing = PythonOperator(
-        task_id='pandas_processing',
-        python_callable = pandas_function
-    )
+    pandas_processing = DummyOperator(task_id='pandas_processing')
     data_load_S3 = DummyOperator(task_id='data_load_S3')
 
     sql_query >> pandas_processing >> data_load_S3
