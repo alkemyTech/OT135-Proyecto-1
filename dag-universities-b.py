@@ -101,7 +101,11 @@ def pandas_function():
     df = df.drop(['postal_code_y', 'postal_code_x'], axis=1)
     #reordering columns and creating .txt file
     df = df.reindex(columns=['university','career','first_name','last_name','gender','age','postal_code','location'])
-    df.to_csv(f'{dir}/files/universidades-b.txt',index=False)
+    #creating the txt files 
+    salvador =df.loc[df['university']=='universidad del salvador']
+    salvador.to_csv('data/salvador.txt',index=False)
+    comahue =df.loc[df['university']=='univ. nacional del comahue']
+    comahue.to_csv('data/comahue.txt',index=False)
 
 with DAG(
     'dag-universities-b',
