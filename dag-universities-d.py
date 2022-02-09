@@ -10,7 +10,7 @@ from airflow.operators.python import PythonOperator
 from lib2to3.pgen2.pgen import DFAState
 import boto3
 
-#logger configuration
+# logger configuration
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(module)s - %(message)s',
@@ -20,7 +20,7 @@ stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter) 
 logger.addHandler(stream_handler)
 
-#database connection
+# database connection
 DB_USER = config('DB_USER')
 DB_PASSWORD = config('DB_PASSWORD')
 DB_HOST = config('DB_HOST')
@@ -43,11 +43,14 @@ def extract_process():
             df.to_csv(f"{home}/files/universidades-d.csv")
             logger.info('csv file created correctly')
 
-#UNIVERSIDADES = 'Universidad Tecnológica Nacional / Universidad Nacional De Tres De Febrero'
+# UNIVERSIDADES = 'Universidad Tecnológica Nacional / Universidad Nacional De Tres De Febrero'
 
 def load_s3():
+    """
+    PythonOperator that uploads a file into a s3 bucket 
+    """
     DIR = os.path.dirname(__file__)
-    FILE = f'{DIR}/files/universidad3defebrero.txt'
+    FILE = f'{DIR}/files/universidad_de_tres_de_febrero.txt'
     logger.info(FILE)
     BUCKET_NAME = config('BUCKET_NAME')
     PUBLIC_KEY = config('PUBLIC_KEY')
@@ -59,7 +62,7 @@ def load_s3():
         logger.error(f'Ocurrió un error: {e}')
         raise e
 
-#Se configuran los retries para todo el dag
+# Se configuran los retries para todo el dag
 default_args = {
 	'retries': 5,
 	'retry_delay': timedelta(minutes=1),
@@ -68,7 +71,7 @@ with DAG(
     'dag-universities-d',
     description='Configuración de un DAG para el grupo de universidades d',
     schedule_interval=timedelta(hours=1),
-    start_date=datetime(2022,1,27)
+    start_date=datetime(2022, 1, 27)
 ) as dag:
     extract_data = PythonOperator(
         task_id='extract_data',
