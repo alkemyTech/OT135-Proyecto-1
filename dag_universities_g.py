@@ -8,7 +8,8 @@ from airflow.operators.python import PythonOperator
 from decouple import config
 import pandas as pd
 from sqlalchemy import create_engine
-
+import boto3
+from botocore.exceptions import ClientError
 
 logging.basicConfig(
 		# muestra fecha, nombre de la universidad y error
@@ -63,6 +64,22 @@ def sql_query_to_csv(PATH_SQL_FILE, PATH_CSV_FILE):
         logger.error(e)
         raise e
 
+def load_to_s3():
+    # Establecemos la ruta al archivo de la Universidad JFK
+    DIR = os.path.dirname(__file__)
+    universidad_txt= f'{DIR}/files/universidad_jf_kennedy.txt'
+    # Parametros para la conexión con S3
+    BUCKET_NAME = config('BUCKET_NAME')
+    PUBLIC_KEY = config('PUBLIC_KEY')
+    SECRET_KEY = config('SECRET_KEY')
+
+    s3 = boto3.client('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
+    try:
+        s3.upload_file(BUCKET_NAME, universidad_txt)
+    except ClientError as e:
+        logging.error(e)
+        return False
+    return True
 
 default_args = {
    # 'owner': 'airflow',
@@ -87,6 +104,9 @@ with DAG(
         op_args=[PATH_SQL_FILE, PATH_CSV_FILE]
     ) # extract from sql
     transform = DummyOperator(task_id='transform') # transform with pandas
-    load = DummyOperator(task_id='load') # load to s3
+    load = PythonOperator(
+        task_id='load',
+        python_callable=load_to_s3
+    )
 
     extract >> transform >> load
