@@ -48,8 +48,7 @@ def filter_universities(df):
     '''
     Separa el archivo csv en dos archivos .txt para las universidades: 
     Univ. Tecnológica Nacional y Univ. Nacional De Tres De Febrero
-    df -- recibe el archivo
-    route -- recibe la ruta de donde debe guardar el achivo
+    df -- recibe el archivo con las dos universidades
     '''
     univer_tecnologica = 'universidad tecnológica nacional'
     univer_tres_febrero = 'universidad nacional de tres de febrero' 
@@ -101,7 +100,7 @@ def normalize_info(df):
     Normaliza la informacion de los datos y elimina las columnas no solicitadas    
     Datos Finales (columnas): 
     - university, career, first_name, last_name, gender, age, postal_code, location, email
-    df -- recibe el archivo 
+    df -- recibe el archivo con las 2 universidades
     '''
     # Año actual para calcular la edad
     today = datetime.today().year
@@ -147,8 +146,7 @@ with DAG(
         task_id='extract_data',
         python_callable=extract_process
     )
-    # Eliminar python_callable antes de subir al repo
-    process = PythonOperator(task_id='process', python_callable=process)
+    process = DummyOperator(task_id='process')
     load = DummyOperator(task_id='load')
 
     extract_data >> process >> load
