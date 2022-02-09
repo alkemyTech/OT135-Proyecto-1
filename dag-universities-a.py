@@ -1,20 +1,41 @@
 import os
 import logging
 import pandas as pd
-from datetime import timedelta, datetime
-from datetime import date
+from datetime import timedelta, datetime, date
+from decouple import config
+from sqlalchemy import create_engine
+from signal import pthread_kill
+
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import PythonOperator
+
 
 logging.basicConfig(level=logging.ERROR,
                     format='%(asctime)s - %(module)s - %(message)s',
                     datefmt='%Y-%m-%d')
 
 logger = logging.getLogger('DAG-A')
-default_args = {
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5)
-}
+
+def query():
+    try:
+        DIR = os.path.dirname(__file__)
+        DB_USER = config('DB_USER')
+        DB_PASSWORD = config('DB_PASSWORD')
+        DB_HOST = config('DB_HOST')
+        DB_NAME = config('DB_NAME')
+        DB_PORT = config('DB_PORT')
+        QUERY = f"{DIR}/sql/universidades-a.sql"
+        with open(QUERY, 'r') as query:
+            engine = create_engine(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
+                               echo=False, 
+                               client_encoding='utf8')
+            df_query = pd.read_sql_query(query.read(), engine)
+            os.makedirs(f'{DIR}/files', exist_ok=True)
+            df_query.to_csv(f'{DIR}/files/universities-a.csv')
+    except Exception as e:
+        logger.error('Hubo un error en la consulta sql en las tablas de la  Universidad De Flores y/o la Universidad Nacional De Villa María')
+        raise e
 
 def age(birth_date):
     """
@@ -71,7 +92,7 @@ def convert(dataframe, dict_to_location, dict_from_location):
     dataframe.drop('full_name', axis=1, inplace=True)
     dataframe.drop('birth_date', axis=1, inplace=True)
 
-def pandas_process():
+def pandas_process_func():
     """
     Toma los datos de las universidades del CSV y las normaliza a un txt
     Inputs:
@@ -122,6 +143,12 @@ def pandas_process():
         logger.error(f'Error al crear el archivo TXT: {e}')
         raise e
 
+
+default_args = {
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5)
+}
+
 # Instanciamos dag
 with DAG(
     'dag_universities_a',
@@ -130,8 +157,9 @@ with DAG(
     schedule_interval=timedelta(hours=1),
     start_date=datetime(2022, 1, 26),
 ) as dag:
-    query_sql = DummyOperator(task_id='query_sql')  # Consulta SQL
-    pandas_process = DummyOperator(task_id='pandas_process')  # Procesar datos con pandas
-    load_S3 = DummyOperator(task_id='load_S3')  # Carga de datos en S3
+    query_sql = PythonOperator(task_id='query_sql',
+                               python_callable=query) # Consulta SQL
+    pandas_process = DummyOperator(task_id='pandas_process') # Procesar datos con pandas
+    load_S3 = DummyOperator(task_id='load_S3') # Carga de datos en S3
 
     query_sql >> pandas_process >> load_S3
