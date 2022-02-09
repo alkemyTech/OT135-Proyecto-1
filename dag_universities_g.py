@@ -73,9 +73,9 @@ def load_to_s3():
     PUBLIC_KEY = config("PUBLIC_KEY")
     SECRET_KEY = config("SECRET_KEY")
 
-    s3 = boto3.client('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
+    s3 = boto3.resource('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
     try:
-        s3.upload_file(BUCKET_NAME, universidad_txt)
+        s3.Bucket(BUCKET_NAME).upload_file(universidad_txt, SECRET_KEY)
     except ClientError as e:
         logging.error(e)
         return False
