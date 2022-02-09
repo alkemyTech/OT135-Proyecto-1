@@ -62,22 +62,23 @@ def sql_query_extract():
         log.error(e)
         raise e
 
-def load_s3():
+def load_s3(*op_args):
     """
     PythonOperator that uploads a file into a s3 bucket 
     """
-    DIR = os.path.dirname(__file__)
-    FILE = f'{DIR}/files/universidad_del_cine.txt'
-    logger.info(FILE)
-    BUCKET_NAME = config('BUCKET_NAME')
-    PUBLIC_KEY = config('PUBLIC_KEY')
-    SECRET_KEY = config('SECRET_KEY')
-    s3 = boto3.resource('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
-    try:
-        s3.meta.client.upload_file(FILE, BUCKET_NAME, 'universidad_del_cine.txt')
-    except Exception as e:
-        logger.error(f'Ocurrió un error: {e}')
-        raise e
+    for university in op_args:
+        DIR = os.path.dirname(__file__)
+        FILE = f'{DIR}/files/{university}'
+        logger.info(FILE)
+        BUCKET_NAME = config('BUCKET_NAME')
+        PUBLIC_KEY = config('PUBLIC_KEY')
+        SECRET_KEY = config('SECRET_KEY')
+        s3 = boto3.resource('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
+        try:
+            s3.meta.client.upload_file(FILE, BUCKET_NAME, f'{university}')
+        except Exception as e:
+            logger.error(f'Ocurrió un error: {e}')
+            raise e
 
 # instanciamos dag
 with DAG(
@@ -95,6 +96,7 @@ with DAG(
     transform = DummyOperator(task_id='transform')  # python operator
     load = PythonOperator(
         task_id='load',
-        python_callable=load_s3
+        python_callable=load_s3,
+        op_args=['universidad_del_cine.txt']
     )
     sql_query >> transform >> load
