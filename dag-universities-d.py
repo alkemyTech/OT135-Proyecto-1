@@ -7,6 +7,8 @@ from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 from decouple import config
 import pandas as pd
+import boto3
+from botocore.exceptions import ClientError
 
 #logger configuration
 logger = logging.getLogger(__name__)
@@ -43,6 +45,23 @@ def extract_process():
 
 #UNIVERSIDADES = 'Universidad Tecnológica Nacional / Universidad Nacional De Tres De Febrero'
 
+def load_to_s3():
+    # Establecemos la ruta al archivo de la UTN
+    DIR = os.path.dirname(__file__)
+    universidad_txt= f'{DIR}/files/universidad_tecnologica_nacional.txt'
+    # Parametros para la conexión con S3
+    BUCKET_NAME = config('BUCKET_NAME')
+    PUBLIC_KEY = config('PUBLIC_KEY')
+    SECRET_KEY = config('SECRET_KEY')
+
+    s3 = boto3.client('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
+    try:
+        s3.upload_file(BUCKET_NAME, universidad_txt)
+    except ClientError as e:
+        logging.error(e)
+        return False
+    return True
+
 
 #Se configuran los retries para todo el dag
 default_args = {
@@ -60,6 +79,9 @@ with DAG(
         python_callable=extract_process
     )
     process = DummyOperator(task_id='process')
-    load = DummyOperator(task_id='load')
+    load = PythonOperator(
+        task_id='load txt to s3',
+        python_callable=load_to_s3
+    )
 
     extract_data >> process >> load
