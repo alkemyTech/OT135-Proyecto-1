@@ -50,13 +50,13 @@ def load_to_s3():
     DIR = os.path.dirname(__file__)
     universidad_txt= f'{DIR}/files/universidad_tecnologica_nacional.txt'
     # Parametros para la conexión con S3
-    BUCKET_NAME = config('BUCKET_NAME')
-    PUBLIC_KEY = config('PUBLIC_KEY')
-    SECRET_KEY = config('SECRET_KEY')
+    BUCKET_NAME = config("BUCKET_NAME")
+    PUBLIC_KEY = config("PUBLIC_KEY")
+    SECRET_KEY = config("SECRET_KEY")
 
-    s3 = boto3.client('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
+    s3 = boto3.resource('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
     try:
-        s3.upload_file(BUCKET_NAME, universidad_txt)
+        s3.Bucket(BUCKET_NAME).upload_file(universidad_txt, SECRET_KEY)
     except ClientError as e:
         logging.error(e)
         return False
@@ -80,7 +80,7 @@ with DAG(
     )
     process = DummyOperator(task_id='process')
     load = PythonOperator(
-        task_id='load txt to s3',
+        task_id='load',
         python_callable=load_to_s3
     )
 
