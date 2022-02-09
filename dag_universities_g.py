@@ -8,6 +8,7 @@ from airflow.operators.python import PythonOperator
 from decouple import config
 import pandas as pd
 from sqlalchemy import create_engine
+import boto3
 
 
 logging.basicConfig(
@@ -63,6 +64,12 @@ def sql_query_to_csv(PATH_SQL_FILE, PATH_CSV_FILE):
         logger.error(e)
         raise e
 
+def load():
+    BUCKET_NAME = config('BUCKET_NAME')
+    PUBLIC_KEY = config('PUBLIC_KEY')
+    SECRET_KEY = config('SECRET_KEY')
+    s3 = boto3.resource('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
+    s3.Bucket(BUCKET_NAME).upload_file(f'{DIR}/txt/facultad_latinoamericana_de_ciencias_sociales.txt', SECRET_KEY)
 
 default_args = {
    # 'owner': 'airflow',
@@ -87,6 +94,9 @@ with DAG(
         op_args=[PATH_SQL_FILE, PATH_CSV_FILE]
     ) # extract from sql
     transform = DummyOperator(task_id='transform') # transform with pandas
-    load = DummyOperator(task_id='load') # load to s3
+    load = PythonOperator(
+        task_id='load',
+        python_callable=load
+    ) # load to s3
 
     extract >> transform >> load
