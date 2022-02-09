@@ -69,9 +69,9 @@ def load_to_s3():
     DIR = os.path.dirname(__file__)
     universidad_txt= f'{DIR}/files/universidad_jf_kennedy.txt'
     # Parametros para la conexión con S3
-    BUCKET_NAME = config('BUCKET_NAME')
-    PUBLIC_KEY = config('PUBLIC_KEY')
-    SECRET_KEY = config('SECRET_KEY')
+    BUCKET_NAME = config("BUCKET_NAME")
+    PUBLIC_KEY = config("PUBLIC_KEY")
+    SECRET_KEY = config("SECRET_KEY")
 
     s3 = boto3.client('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
     try:
