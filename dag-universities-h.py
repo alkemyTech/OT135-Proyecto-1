@@ -74,7 +74,7 @@ def load_s3():
     SECRET_KEY = config('SECRET_KEY')
     s3 = boto3.resource('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
     try:
-        s3.Bucket(BUCKET_NAME).upload_file(FILE, SECRET_KEY)
+        s3.meta.client.upload_file(FILE, BUCKET_NAME, 'universidad_del_cine.txt')
     except Exception as e:
         logger.error(f'Ocurrió un error: {e}')
         raise e
