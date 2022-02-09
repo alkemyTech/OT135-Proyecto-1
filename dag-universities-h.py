@@ -154,11 +154,11 @@ def data_nomalization():
     df_universidad_bs_as = df[df['university']
                               == 'universidad de buenos aires']
     # Exportamos el df de la universidad de buenos aires como un .txt
-    df_universidad_bs_as.to_csv('universidad_de_buenos_aires.txt')
+    df_universidad_bs_as.to_csv(f'{dir}/files/universidad_de_buenos_aires.txt')
     # Creamos un df filtrando por universidad del cine
     df_universidad_cine = df[df['university'] == 'universidad del cine']
     # Exportamos el df de la universidad de buenos aires como un .txt
-    df_universidad_cine.to_csv('universidad_del_cine.txt')
+    df_universidad_cine.to_csv(f'{dir}/files/universidad_del_cine.txt')
 
 
 # instanciamos dag
