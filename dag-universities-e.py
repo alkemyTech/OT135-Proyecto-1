@@ -57,7 +57,6 @@ def data_normalization():
     Los tranforma en dataframes y luego realiza un procesamiento en sus datos para que queden 
     normalizados. Realiza un merge de ambos para completar datos nulos y luego exporta dos archivos 
     de universidades en formato .txt
-
     """
     try:
         df = pd.read_csv(f'{route}/files/universities-e.csv', parse_dates=['birth_date'])        
@@ -66,9 +65,7 @@ def data_normalization():
     except Exception as ex:
         logger.error(ex)
         raise ex
-        
     # Tratamiento de df
-    
     df.drop(['Unnamed: 0'], axis=1, inplace=True)
     
     for column in df.columns:
@@ -107,7 +104,6 @@ def data_normalization():
         'dds' : '(^dds$)', 
         'iv'  : '(^iv$)'
     }
-    
     # Reemplazo las palabras del diccionario words por espacios vacíos
     for key, value in words.items():
         df.full_name = df.full_name.apply(lambda key: re.sub(value,"",key))
@@ -127,26 +123,21 @@ def data_normalization():
     df.location.replace('(nan)',np.nan, regex=True, inplace=True)
     
     # Tratamiento de df_codigos_postales
- 
     df_codigos_postales.localidad = df_codigos_postales.localidad.str.lower()
     df_codigos_postales.codigo_postal = df_codigos_postales.codigo_postal.astype(str)
-    
     df_codigos_postales.columns = 'postal_code location'.split()
-    
     # Realizo un merge de ambos dataframes para obtener las localidades y codigos postales faltantes
-
     df = pd.merge(df, df_codigos_postales, how="left", on="postal_code")
     df['location'] = df.location_y.fillna(df.location_x)
+
     df.drop(['location_y', 'location_x'], axis=1, inplace=True)
-    
+
     df_codigos_postales = df_codigos_postales.drop_duplicates(['location'], keep='first')
-    
     df = pd.merge(df, df_codigos_postales, how="left", on="location")
     df['postal_code'] = df.postal_code_y.fillna(df.postal_code_x)
     df.drop(['postal_code_y', 'postal_code_x'], axis=1, inplace=True)
     
     # Reorganizo las columnas del dataframe final
-    
     df = df[[
         'university', 'career', 'first_name', 'last_name', 'gender', 'age', 
         'postal_code', 'location', 'email'
