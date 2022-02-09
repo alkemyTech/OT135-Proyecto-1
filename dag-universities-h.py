@@ -63,6 +63,11 @@ def sql_query_extract():
 
 
 def data_nomalization():
+    '''
+    La función lee el csv de las universidades h
+    Normaliza toda la información
+    Crea un .txt por cada una de la univeridades contenidas en el csv
+    '''
     # Establecemos la ruta al directorio local
     dir = os.path.dirname(__file__)
 
@@ -73,7 +78,8 @@ def data_nomalization():
     df = df.drop(['Unnamed: 0'], axis=1)
 
     # Creo una variable con las columnas no numéricas
-    columns = ['university', 'career', 'student_full_name', 'gender', 'location', 'email']
+    columns = ['university', 'career',
+               'student_full_name', 'gender', 'location', 'email']
 
     # Creo una iteración para las colúmnas no numérica
     for column in columns:
@@ -85,22 +91,26 @@ def data_nomalization():
         df[column] = df[column].str.strip()
 
     # Reemplazo valores de 'm' y 'f' por 'male' y 'female' en la columna gender
-    df['gender'] = df['gender'].replace(to_replace='m', value='male', regex=True)
-    df['gender'] = df['gender'].replace(to_replace='f', value='female', regex=True)
+    df['gender'] = df['gender'].replace(
+        to_replace='m', value='male', regex=True)
+    df['gender'] = df['gender'].replace(
+        to_replace='f', value='female', regex=True)
 
     # Limpiamos la columna full_name para que nos queden solo los nombres y apellidos
-    salutations = ["mrs\.", "mr\.", "dr\.", "ms\.", "md", "dds", "dvm", "iii", "phd", "jr\.", "ii", "iv", "miss"]
-    df['student_full_name'] = df['student_full_name'].replace(salutations, value='', regex=True)
+    salutations = ["mrs\.", "mr\.", "dr\.", "ms\.", "md",
+                   "dds", "dvm", "iii", "phd", "jr\.", "ii", "iv", "miss"]
+    df['student_full_name'] = df['student_full_name'].replace(
+        salutations, value='', regex=True)
     # Separamos nombre y apellido de la columna full_name, los agregamos al df y eliminamos la columna full_name
-    name = df_names = df['student_full_name'].str.split(expand=True)
+    name = df['student_full_name'].str.split(expand=True)
     name.columns = ['first_name', 'last_name']
     df = pd.concat([df, name], axis=1)
     df = df.drop(['student_full_name'], axis=1)
 
     # Creo una función para calcular la edad
     def age(born):
-        born = datetime.strptime(born, "%Y-%m-%d").date() 
-        today = date.today() 
+        born = datetime.strptime(born, "%Y-%m-%d").date()
+        today = date.today()
         return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
     # Creo una columna con la edad de las personas
     df['age'] = df['birth_date'].apply(age)
@@ -109,25 +119,32 @@ def data_nomalization():
     # Leemos el archivo .csv con los codigos postales y las localidades con Pandas
     df_cod_postales = pd.read_csv(f'{dir}/files/codigos_postales.csv')
     # Nos quedamos con solo un código postal por localidad
-    df_cod_postales = df_cod_postales.drop_duplicates(['localidad'], keep='first')
+    df_cod_postales = df_cod_postales.drop_duplicates(
+        ['localidad'], keep='first')
     df_cod_postales['localidad'] = df_cod_postales['localidad'].str.lower()
     # Renombramos las columnas para que coincidan con las de df
-    df_cod_postales = df_cod_postales.rename(columns={'codigo_postal': 'postal_code', 'localidad': 'location'})
+    df_cod_postales = df_cod_postales.rename(
+        columns={'codigo_postal': 'postal_code', 'localidad': 'location'})
     # Hago un merge de ambos dataframes para obtener localidades
-    merge_location = pd.merge(df, df_cod_postales, how="left", on="postal_code")
-    merge_location.location_x = merge_location.location_x.fillna(merge_location.location_y)
+    merge_location = pd.merge(
+        df, df_cod_postales, how="left", on="postal_code")
+    merge_location.location_x = merge_location.location_x.fillna(
+        merge_location.location_y)
     df.location = merge_location.location_x
     # Elimino duplicados de df_codigos_postales
-    df_codigos_postales = df_cod_postales.drop_duplicates(['location'], keep='first')
+    df_codigos_postales = df_cod_postales.drop_duplicates(
+        ['location'], keep='first')
     # Hago otro merge de ambos dataframes para obtener codigos postales
     merge_codes = pd.merge(df, df_codigos_postales, how="left", on="location")
-    merge_codes.postal_code_x = merge_codes.postal_code_x.fillna(merge_codes.postal_code_y)
+    merge_codes.postal_code_x = merge_codes.postal_code_x.fillna(
+        merge_codes.postal_code_y)
     df.postal_code = merge_codes.postal_code_x
     # Transformamos los valores de la postal_code en int
     df['postal_code'] = df.postal_code.astype(int)
 
     # Creamos un df filtrando por universidad de buenos aires
-    df_universidad_bs_as = df[df['university'] == 'universidad de buenos aires']
+    df_universidad_bs_as = df[df['university']
+                              == 'universidad de buenos aires']
     # Exportamos el df de la universidad de buenos aires como un .txt
     df_universidad_bs_as.to_csv('universidad_de_buenos_aires.txt')
     # Creamos un df filtrando por universidad del cine
