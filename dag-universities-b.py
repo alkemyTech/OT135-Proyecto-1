@@ -79,6 +79,9 @@ def pandas_function():
     df["location"] = df["location"].str.lower()
     df["email"] = df["email"].str.lower()
     cp["location"] = cp["location"].str.lower()
+    #setting gender in the requested format
+    df['gender'] = df['gender'].str.replace('m', 'male')
+    df['gender'] = df['gender'].str.replace('f', 'female')
     #calculating age
     df['date_of_birth'] = df['date_of_birth'].apply(lambda x: datetime.strptime(x,'%Y-%m-%d'))
     now = pd.Timestamp('now')
@@ -103,9 +106,9 @@ def pandas_function():
     df = df.reindex(columns=['university','career','first_name','last_name','gender','age','postal_code','location'])
     #creating the txt files 
     salvador =df.loc[df['university']=='universidad del salvador']
-    salvador.to_csv('data/salvador.txt',index=False)
+    salvador.to_csv('data/universidad_del_salvador.txt',index=False)
     comahue =df.loc[df['university']=='univ. nacional del comahue']
-    comahue.to_csv('data/comahue.txt',index=False)
+    comahue.to_csv('data/univ._nacional_del_comahue.txt',index=False)
 
 with DAG(
     'dag-universities-b',
