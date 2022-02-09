@@ -1,14 +1,16 @@
 import pandas as pd
 import logging
 import csv
+import boto3
 from sqlalchemy import create_engine, text
-from decouple import config
+from decouple import config, auth
 import os
 
 from datetime import timedelta, datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -48,6 +50,29 @@ def extract():
         logger.error(ex)
         raise ex
 
+def load_to_s3():
+    '''
+    Upload a file to an S3 bucket
+    :return: True if file was uploaded, else False
+    '''
+    route = os.path.dirname(__file__)
+    name_txt = 'universidad abierta interamericana.txt'
+    file = f'{route}/files/{name_txt}'
+    ACCESS_KEY = auth('ACCESS_KEY')
+    SECRET_KEY = auth('SECRET_KEY')
+    BUCKET = auth('BUCKET')
+    # Upload the file
+    s3_client = boto3.client('s3', aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_KEY)
+
+    s3_client.create_bucket(Bucket=BUCKET)
+    try:        
+        with open(f'{route}/txt/archivo.txt', 'rb') as f:
+            s3_client.upload_fileobj(file, BUCKET, name_txt)
+    except ClientError as e:
+        logging.error(e)
+        return False
+    return True
+
 with DAG(
     'dag-universities-e',
     description='Configuración de DAG para el grupo de universidades E',
@@ -60,6 +85,9 @@ with DAG(
 ) as dag:
     extract_from_sql = DummyOperator(task_id='extract_from_sql')
     transform_with_pandas = DummyOperator(task_id='transform_with_pandas')
-    load_to_s3 = DummyOperator(task_id='load_to_s3')
+    load_to_s3 = PythonOperator(
+        task_id='load_to_s3',
+        python_callable=load_to_s3
+    )
 
     extract_from_sql >> transform_with_pandas >> load_to_s3
