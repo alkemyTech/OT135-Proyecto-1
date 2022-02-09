@@ -37,6 +37,11 @@ def extract():
         os.makedirs(f"{route}/files")        
     df.to_csv(f'{route}/files/universities-f.csv')
 
+def pandas_processing():
+    """Esta función no realiza ninguna acción
+    """
+    pass
+
 with DAG(
     'universidades-F',
     description = 'DAG correspondiente a las universidades de Morón y Río Cuarto',
@@ -51,7 +56,10 @@ with DAG(
         task_id='extract_data',
         python_callable=extract
     )
-    transform = DummyOperator(task_id='transform_data')
+    transform = PythonOperator(
+        task_id='transform',
+        python_callable=pandas_processing
+    )
     load = DummyOperator(task_id='load_data')
 
     extract >> transform >> load
