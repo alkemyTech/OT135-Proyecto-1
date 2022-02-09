@@ -5,14 +5,17 @@ import os
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
+import boto3
 import pandas as pd
 import sqlalchemy
 from decouple import config
 
 # Se configura el formato de logging.ERROR
-log.basicConfig(level=log.ERROR,
+log.basicConfig(level=log.INFO,
                 format='%(asctime)s - %(processName)s - %(message)s',
                 datefmt='%Y-%m-%d')
+
+logger = log.getLogger(__name__)
 
 # Se configura la cantidad de reintentos en caso de que el DAG falle
 default_args = {
@@ -41,9 +44,9 @@ def sql_query_extract():
     try:
         engine = sqlalchemy.create_engine(
             f'postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
-        log.info('Conexión exitosa con la base de datos')
+        logger.info('Conexión exitosa con la base de datos')
     except Exception as e:
-        log.error(e)
+        logger.error(e)
         raise e
     #Se lee .sql y se exporta con csv
     try:
@@ -52,10 +55,45 @@ def sql_query_extract():
         # Creo carpeta files si no existe
         os.makedirs(f"{dir}/files", exist_ok=True)
         df.to_csv(f'{dir}/files/universidades-b.csv')
-        log.info('CSV creado con exito')
+        logger.info('CSV creado con exito')
     except Exception as e:
-        log.error(e)
+        logger.error(e)
         raise e
+
+
+
+DIR = os.path.dirname(__file__)
+PATH = f'{DIR}/files/universidad-del-salvador.txt'
+
+def upload_file_s3(PATH, key):
+    """Recibe un archivo .txt y lo sube a un bucket de S3
+
+    Args:
+        PATH (string): ruta en donde se encuentra el archivo
+        key (string): nombre con el que va a figurar el archivo en S3
+    """
+
+    BUCKET_NAME= config('BUCKET_NAME')
+    PUBLIC_KEY= config('PUBLIC_KEY')
+    SECRET_KEY= config('SECRET_KEY')
+
+    try:
+        s3 = boto3.resource(
+            's3',
+            aws_access_key_id=PUBLIC_KEY,
+            aws_secret_access_key=SECRET_KEY
+        )
+        logger.info('Successful connection')
+
+        with open(PATH, 'rb') as f:
+            s3.Bucket(BUCKET_NAME).put_object(
+                Key= key,
+                Body= f
+            )    
+        logger.info('File uploaded successfully')
+    except Exception as ex:
+        logger.error(ex)
+        raise ex
 
 
 with DAG(
@@ -69,6 +107,10 @@ with DAG(
         python_callable=sql_query_extract,
     )
     pandas_processing = DummyOperator(task_id='pandas_processing')
-    data_load_S3 = DummyOperator(task_id='data_load_S3')
+    data_load_S3 = PythonOperator(
+        task_id='data_load_S3',
+        python_callable=upload_file_s3,
+        op_args=[PATH, 'universidad-del-salvador.txt']
+    )
 
     sql_query >> pandas_processing >> data_load_S3
