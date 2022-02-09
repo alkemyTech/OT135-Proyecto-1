@@ -91,6 +91,8 @@ def transform():
     df['age'] = (int(datetime.today().year) - pd.DatetimeIndex(df['birth_date']).year).astype(int)
     df['email'] = df['email'].str.lower()
     df['adress'] = df['adress'].str.replace('-', ' ')
+    df['zipcode'] = df['zipcode'].astype(str)
+    df['zipcode'] = df['zipcode'].str[:4]
 
     # A continuación, se mergean las columnas de zipcode y adress con sus correspondientes en la tabla auxiliar para
     # obtener los datos que faltan y luego juntar todos en las dos columnas postal_code y location
@@ -110,7 +112,7 @@ def transform():
         right_on='localidad'
     )
     df['postal_code'] = mrge1['zipcode'].replace('nan','') + mrge2['codigo_postal'].replace(np.NaN,'')
-    df['location'] = (mrge1['localidad'].replace(np.NaN,'') + mrge2['localidad']).str.lower()
+    df['location'] = (mrge1['localidad'].replace(np.NaN,'') + mrge2['localidad'].replace(np.NaN,'')).str.lower()
 
     df.drop(['full_name', 'birth_date', 'inscription_date','adress','zipcode'], axis='columns', inplace=True)
     df = df.reindex(columns=['university', 'career', 'first_name', 'last_name', 'gender', 'age', 'postal_code', 'location', 'email'])
@@ -123,9 +125,6 @@ def transform():
 
     try:
         os.makedirs(f'{DIR}/txt', exist_ok= True)
-        mrge1.to_csv(f'{DIR}/txt/mrge1', index=None)
-        mrge2.to_csv(f'{DIR}/txt/mrge2', index=None)
-        df.to_csv(f'{DIR}/txt/df', index=None)
         df_kennedy.to_csv(f'{DIR}/txt/universidad-j-f-kennedy.txt', index=None)
         df_latinoamericana.to_csv(f'{DIR}/txt/facultad_latinoamericana_de_ciencias_sociales.txt', index=None)
     except Exception as e:
