@@ -1,13 +1,14 @@
 import logging as log
 from datetime import timedelta, datetime
 import os
-
+import boto3
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 import pandas as pd
 import sqlalchemy
 from decouple import config
+from botocore.exceptions import ClientError
 
 # Se configura el formato de logging.ERROR
 log.basicConfig(level=log.ERROR,
@@ -57,6 +58,28 @@ def sql_query_extract():
         log.error(e)
         raise e
 
+def data_load_S3():
+    '''
+    Upload a file to an S3 bucket
+    :return: True if file was uploaded, else False
+    '''
+    route = os.path.dirname(__file__)
+    name_txt = 'univ. nacional del comahue.txt'
+    file = f'{route}/files/{name_txt}'
+    ACCESS_KEY = config('ACCESS_KEY')
+    SECRET_KEY = config('SECRET_KEY')
+    BUCKET = config('BUCKET')
+    # Upload the file
+    s3_client = boto3.client('s3', aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_KEY)
+
+    s3_client.create_bucket(Bucket=BUCKET)
+    try:        
+        with open(f'{route}/txt/archivo.txt', 'rb') as f:
+            s3_client.upload_fileobj(file, BUCKET, name_txt)
+    except ClientError as e:
+        log.error(e)
+        return False
+    return True
 
 with DAG(
     'dag-universities-b',
@@ -69,6 +92,9 @@ with DAG(
         python_callable=sql_query_extract,
     )
     pandas_processing = DummyOperator(task_id='pandas_processing')
-    data_load_S3 = DummyOperator(task_id='data_load_S3')
+    data_load_S3 = PythonOperator(
+        task_id='data_load_S3',
+        python_callable=data_load_S3
+    )
 
     sql_query >> pandas_processing >> data_load_S3
