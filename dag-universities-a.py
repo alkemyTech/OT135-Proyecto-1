@@ -182,8 +182,7 @@ with DAG(
 ) as dag:
     query_sql = PythonOperator(task_id='query_sql',
                                python_callable=query) # Consulta SQL
-    pandas_process = PythonOperator(task_id='pandas_process',
-                                python_callable=pandas_process_func) # Procesar datos con pandas
+    pandas_process = DummyOperator(task_id='pandas_process') # Procesar datos con pandas
     load_S3 = PythonOperator(task_id='load_S3',
                                  python_callable=upload_to_s3) # Carga de datos en S3
 
