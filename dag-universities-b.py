@@ -63,7 +63,7 @@ def sql_query_extract():
 
 
 DIR = os.path.dirname(__file__)
-PATH = f'{DIR}/files/universidad-del-salvador.txt'
+PATH_FILE_TXT = f'{DIR}/files/universidad-del-salvador.txt'
 
 def upload_file_s3(PATH, key):
     """Recibe un archivo .txt y lo sube a un bucket de S3
@@ -110,7 +110,7 @@ with DAG(
     data_load_S3 = PythonOperator(
         task_id='data_load_S3',
         python_callable=upload_file_s3,
-        op_args=[PATH, 'universidad-del-salvador.txt']
+        op_args=[PATH_FILE_TXT, 'universidad-del-salvador.txt']
     )
 
     sql_query >> pandas_processing >> data_load_S3
