@@ -1,4 +1,4 @@
-import logging 
+import logging
 import os
 
 from datetime import timedelta, datetime
@@ -9,13 +9,14 @@ from decouple import config
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
-
+import boto3
+from botocore.exceptions import ClientError
 
 logging.basicConfig(
-		# muestra fecha, nombre de la universidad y error
-        level = logging.ERROR,                
-        format = '%(asctime)s: %(module)s - %(message)s',
-        datefmt = '%Y-%m-%d'
+    # muestra fecha, nombre de la universidad y error
+    level=logging.ERROR,
+    format='%(asctime)s: %(module)s - %(message)s',
+    datefmt='%Y-%m-%d'
 )
 
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ def sql_query_to_csv(PATH_SQL_FILE, PATH_CSV_FILE):
         e: si existe error en la conexión con la base de datos
         e: si existe error en la lectura del archivo .sql o en la exportación del archivo .csv
     """
-    
+
     DB_USER = config("DB_USER")
     DB_PASSWORD = config("DB_PASSWORD")
     DB_HOST = config("DB_HOST")
@@ -57,7 +58,7 @@ def sql_query_to_csv(PATH_SQL_FILE, PATH_CSV_FILE):
     try:
         with open(PATH_SQL_FILE, "r") as sql_file:
             df_read = pd.read_sql(sql_file.read(), engine)
-        os.makedirs(f"{DIR}/files", exist_ok= True)
+        os.makedirs(f"{DIR}/files", exist_ok=True)
         df_read.to_csv(PATH_CSV_FILE)
         logger.info("csv file successfully exported")
     except Exception as e:
@@ -131,32 +132,54 @@ def transform():
         logger.error('Hubo un error guardando los archivos .txt')
         raise e
 
+def load_to_s3():
+    # Establecemos la ruta al archivo de la Universidad JFK
+    DIR = os.path.dirname(__file__)
+    universidad_txt = f'{DIR}/files/universidad_jf_kennedy.txt'
+    # Parametros para la conexión con S3
+    BUCKET_NAME = config("BUCKET_NAME")
+    PUBLIC_KEY = config("PUBLIC_KEY")
+    SECRET_KEY = config("SECRET_KEY")
+    s3 = boto3.resource(
+        service_name='s3',
+        aws_access_key_id=PUBLIC_KEY,
+        aws_secret_access_key=SECRET_KEY
+    )
+    try:
+        s3.meta.client.upload_file(
+            universidad_txt, BUCKET_NAME, 'univerdidad_jf_kennedy2.txt')
+    except ClientError as e:
+        logging.error(e)
+        return False
+    return True
+
+
 default_args = {
-   # 'owner': 'airflow',
-   # 'depends_on_past': False,
-   # 'email': ['airflow@example.com'],
-   # 'email_on_failure': False,
-   # 'email_on_retry': False,
-   'retries': 1,
-   'retry_delay': timedelta(minutes=5),
+    # 'owner': 'airflow',
+    # 'depends_on_past': False,
+    # 'email': ['airflow@example.com'],
+    # 'email_on_failure': False,
+    # 'email_on_retry': False,
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
 }
 
 with DAG(
     'dag-universidades-g',
-    default_args= default_args,
-    description = 'Este es un DAG configurado para hacer un ETL para el grupo de universidades G sin consultas ni procesamiento',
-    schedule_interval = timedelta(days=1),
-    start_date = datetime(2022, 1, 27)
+    default_args=default_args,
+    description='Este es un DAG configurado para hacer un ETL para el grupo de universidades G sin consultas ni procesamiento',
+    schedule_interval=timedelta(days=1),
+    start_date=datetime(2022, 1, 27)
 )as dag:
     extract = PythonOperator(
         task_id='extract',
         python_callable=sql_query_to_csv,
         op_args=[PATH_SQL_FILE, PATH_CSV_FILE]
-    ) # extract from sql
-    transform = PythonOperator(
-        task_id='transform',
-        python_callable=transform
-    ) # transform with pandas
-    load = DummyOperator(task_id='load') # load to s3
+    )  # extract from sql
+    transform = DummyOperator(task_id='transform')  # transform with pandas
+    load = PythonOperator(
+        task_id='load',
+        python_callable=load_to_s3
+    )
 
     extract >> transform >> load
