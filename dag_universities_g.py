@@ -7,6 +7,7 @@ from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 from decouple import config
 import pandas as pd
+import numpy as np
 from sqlalchemy import create_engine
 import boto3
 from botocore.exceptions import ClientError
@@ -64,6 +65,72 @@ def sql_query_to_csv(PATH_SQL_FILE, PATH_CSV_FILE):
         logger.error(e)
         raise e
 
+def transform():
+    '''
+    Esta función transforma los datos previamante extraidos mediante una consulta sql 
+    a las columnas requeridas y posteriormente genera un archivo .txt con los datos
+    para cada una de las universidades en el grupo g
+    '''
+    try:
+        df = pd.read_csv(PATH_CSV_FILE, index_col=False)
+        dfaux = pd.read_csv(f'{DIR}/codigos_postales.csv')
+    except Exception as e:
+        logger.error('Hubo un error en la lectura de un archivo csv')
+        raise e
+    
+    df['university'] = df['university'].str.lower().str.replace('-',' ')
+    df['university'] = df['university'].str.lstrip(' ')
+    df['career'] = df['career'].str.lower().str.replace('-',' ')
+    df['career'] = df['career'].str.rstrip(' ').str.lstrip(' ')
+    WORDS = ['dr.','mr.','mrs.-','hill','md','phd','ii','iii','md','dvm','phd','dds','iv','ms.']
+    df.full_name.replace(WORDS,'', regex=True, inplace=True)
+    df['full_name'] = df['full_name'].str.lstrip('.')
+    df['full_name'] = df['full_name'].str.lstrip('-')
+    df['first_name'] = df['full_name'].str.lower().str.split('-', expand=True)[0]
+    df['last_name'] = df['full_name'].str.lower().str.split('-', expand=True)[1]
+    df['gender'] = df['gender'].str.lower().str.replace('m','male').str.replace('f','female')
+    df['age'] = (int(datetime.today().year) - pd.DatetimeIndex(df['birth_date']).year).astype(int)
+    df['email'] = df['email'].str.lower()
+    df['adress'] = df['adress'].str.replace('-', ' ')
+    df['zipcode'] = df['zipcode'].astype(str)
+    df['zipcode'] = df['zipcode'].str[:4]
+
+    # A continuación, se mergean las columnas de zipcode y adress con sus correspondientes en la tabla auxiliar para
+    # obtener los datos que faltan y luego juntar todos en las dos columnas postal_code y location
+    
+    mrge1 = pd.merge(
+        df[['zipcode','adress']].astype(str),
+        dfaux.astype(str),
+        how="left",
+        left_on='zipcode',
+        right_on='codigo_postal',
+    )
+    mrge2 = pd.merge(
+        df[['zipcode','adress']].astype(str),
+        dfaux.drop_duplicates(subset=['localidad']).astype(str),
+        how="left",
+        left_on='adress',
+        right_on='localidad'
+    )
+    df['postal_code'] = mrge1['zipcode'].replace('nan','') + mrge2['codigo_postal'].replace(np.NaN,'')
+    df['location'] = (mrge1['localidad'].replace(np.NaN,'') + mrge2['localidad'].replace(np.NaN,'')).str.lower()
+
+    df.drop(['full_name', 'birth_date', 'inscription_date','adress','zipcode'], axis='columns', inplace=True)
+    df = df.reindex(columns=['university', 'career', 'first_name', 'last_name', 'gender', 'age', 'postal_code', 'location', 'email'])
+
+    # Se filtran los datos y se crea un dataframe para cada universidad, para posteriomente guardarse
+    # en la carpeta txt
+
+    df_kennedy = df[df['university']=='universidad j. f. kennedy']
+    df_latinoamericana = df[df['university']=='facultad latinoamericana de ciencias sociales']
+
+    try:
+        os.makedirs(f'{DIR}/txt', exist_ok= True)
+        df_kennedy.to_csv(f'{DIR}/txt/universidad-j-f-kennedy.txt', index=None)
+        df_latinoamericana.to_csv(f'{DIR}/txt/facultad_latinoamericana_de_ciencias_sociales.txt', index=None)
+    except Exception as e:
+        logger.error('Hubo un error guardando los archivos .txt')
+        raise e
 
 def load_to_s3():
     # Establecemos la ruta al archivo de la Universidad JFK
