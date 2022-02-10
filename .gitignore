@@ -4,4 +4,4 @@
 !template.env
 *.csv
 __pycache__
-/files
+*.txt
