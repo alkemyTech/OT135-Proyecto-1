@@ -162,9 +162,8 @@ with DAG(
         task_id = 'query_sql',
         python_callable = extract_data
         )
-    pandas_process = PythonOperator(
-        task_id='pandas_process',
-        python_callable = transform)
+    pandas_process = DummyOperator(
+        task_id='pandas_process')
     load_S3 = DummyOperator(task_id='load_S3')
 
     query_sql >> pandas_process >> load_S3
