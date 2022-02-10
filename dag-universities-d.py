@@ -48,6 +48,9 @@ def filter_universities(df):
     '''
     Separa el archivo csv en dos archivos .txt para las universidades: 
     Univ. Tecnológica Nacional y Univ. Nacional De Tres De Febrero
+    Elimina las columnas no solicitadas    
+    Datos Finales (columnas): 
+    - university, career, first_name, last_name, gender, age, postal_code, location, email
     df -- recibe el archivo con las dos universidades
     '''
     univer_tecnologica = 'universidad tecnológica nacional'
@@ -97,9 +100,7 @@ def filter_universities(df):
 
 def normalize_info(df):        
     '''
-    Normaliza la informacion de los datos y elimina las columnas no solicitadas    
-    Datos Finales (columnas): 
-    - university, career, first_name, last_name, gender, age, postal_code, location, email
+    Normaliza la informacion de los datos 
     df -- recibe el archivo con las 2 universidades
     '''
     # Año actual para calcular la edad
