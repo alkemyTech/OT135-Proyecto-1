@@ -69,8 +69,8 @@ def load():
     PUBLIC_KEY = config('PUBLIC_KEY')
     SECRET_KEY = config('SECRET_KEY')
     s3 = boto3.resource('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
-    s3.Bucket(BUCKET_NAME).upload_file(f'{DIR}/txt/facultad_latinoamericana_de_ciencias_sociales.txt', SECRET_KEY)
-
+    s3.meta.client.upload_file(f'{DIR}/txt/facultad_latinoamericana_de_ciencias_sociales.txt', BUCKET_NAME, 'facultad_latinoamericana_de_ciencias_sociales.txt')
+    
 default_args = {
    # 'owner': 'airflow',
    # 'depends_on_past': False,
