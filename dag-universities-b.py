@@ -7,7 +7,7 @@ from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 import pandas as pd
 import sqlalchemy
-from decouple import config, auth
+from decouple import config
 from botocore.exceptions import ClientError
 
 # Se configura el formato de logging.ERROR
@@ -66,9 +66,9 @@ def data_load_S3():
     route = os.path.dirname(__file__)
     name_txt = 'univ. nacional del comahue.txt'
     file = f'{route}/files/{name_txt}'
-    ACCESS_KEY = auth('ACCESS_KEY')
-    SECRET_KEY = auth('SECRET_KEY')
-    BUCKET = auth('BUCKET')
+    ACCESS_KEY = config('ACCESS_KEY')
+    SECRET_KEY = config('SECRET_KEY')
+    BUCKET = config('BUCKET')
     # Upload the file
     s3_client = boto3.client('s3', aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_KEY)
 
