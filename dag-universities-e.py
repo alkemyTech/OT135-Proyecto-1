@@ -3,7 +3,7 @@ import logging
 import csv
 import boto3
 from sqlalchemy import create_engine, text
-from decouple import config, auth
+from decouple import config
 import os
 
 from datetime import timedelta, datetime
@@ -58,9 +58,9 @@ def load_to_s3():
     route = os.path.dirname(__file__)
     name_txt = 'universidad abierta interamericana.txt'
     file = f'{route}/files/{name_txt}'
-    ACCESS_KEY = auth('ACCESS_KEY')
-    SECRET_KEY = auth('SECRET_KEY')
-    BUCKET = auth('BUCKET')
+    ACCESS_KEY = config('ACCESS_KEY')
+    SECRET_KEY = config('SECRET_KEY')
+    BUCKET = config('BUCKET')
     # Upload the file
     s3_client = boto3.client('s3', aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_KEY)
 
