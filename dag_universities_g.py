@@ -72,10 +72,13 @@ def load_to_s3():
     BUCKET_NAME = config("BUCKET_NAME")
     PUBLIC_KEY = config("PUBLIC_KEY")
     SECRET_KEY = config("SECRET_KEY")
-
-    s3 = boto3.resource('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
+    s3 = boto3.resource(
+    service_name='s3',
+    aws_access_key_id=PUBLIC_KEY,
+    aws_secret_access_key=SECRET_KEY
+    )
     try:
-        s3.Bucket(BUCKET_NAME).upload_file(universidad_txt, SECRET_KEY)
+        s3.meta.client.upload_file(universidad_txt, BUCKET_NAME, 'univerdidad_jf_kennedy2.txt')
     except ClientError as e:
         logging.error(e)
         return False
