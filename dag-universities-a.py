@@ -112,7 +112,7 @@ def pandas_process_func():
 
     # Cargamos los archivos CSV necesarios
     DIR = os.path.dirname(__file__)
-    ARCHIVO_CSV = f'{DIR}/files/universities_a.csv'
+    ARCHIVO_CSV = f'{DIR}/files/universities-a.csv'
     ARCHIVO_VILLAMARIA = f'{DIR}/files/universidad_nacional_de_villa_maria.txt'
     ARCHIVO_FLORES = f'{DIR}/files/universidad_de_flores.txt'
     CODIGOS_POSTALES = f'{DIR}/files/codigos_postales.csv'
@@ -175,9 +175,8 @@ with DAG(
 ) as dag:
     query_sql = PythonOperator(task_id='query_sql',
                                python_callable=query)  # Consulta SQL
-    pandas_process = PythonOperator(
-        task_id='pandas_process',
-        python_callable=pandas_process_func)    # Procesar datos con pandas
+    pandas_process = PythonOperator(task_id='pandas_process',
+                                    python_callable=pandas_process_func)    # Procesar datos con pandas
     load_S3 = DummyOperator(task_id='load_S3')  # Carga de datos en S3
 
     query_sql >> pandas_process >> load_S3
