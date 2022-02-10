@@ -9,6 +9,7 @@ from airflow.operators.python import PythonOperator
 import pandas as pd
 import sqlalchemy
 from decouple import config
+import boto3
 
 
 log.basicConfig(
@@ -16,7 +17,7 @@ log.basicConfig(
     format='%(asctime)s - %(module)s - %(message)s',
     datefmt='%Y-%m-%d'
 )
-
+logger = log.getLogger('DAG-H')
 # Estos argumentos se pasarán a cada operador
 # Se pueden anular por tarea durante la inicialización del operador
 default_args = {
@@ -61,6 +62,23 @@ def sql_query_extract():
         log.error(e)
         raise e
 
+def load_s3(*op_args):
+    """
+    PythonOperator that uploads a file into a s3 bucket 
+    """
+    for university in op_args:
+        DIR = os.path.dirname(__file__)
+        FILE = f'{DIR}/files/{university}'
+        logger.info(FILE)
+        BUCKET_NAME = config('BUCKET_NAME')
+        PUBLIC_KEY = config('PUBLIC_KEY')
+        SECRET_KEY = config('SECRET_KEY')
+        s3 = boto3.resource('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
+        try:
+            s3.meta.client.upload_file(FILE, BUCKET_NAME, f'{university}')
+        except Exception as e:
+            logger.error(f'Ocurrió un error: {e}')
+            raise e
 
 def data_nomalization():
     '''
@@ -175,6 +193,9 @@ with DAG(
         python_callable=sql_query_extract,
     )
     transform = DummyOperator(task_id='transform')  # python operator
-    load = DummyOperator(task_id='load')  # conexion a s3
-
+    load = PythonOperator(
+        task_id='load',
+        python_callable=load_s3,
+        op_args=['universidad_del_cine.txt']
+    )
     sql_query >> transform >> load
