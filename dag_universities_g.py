@@ -12,6 +12,7 @@ from sqlalchemy import create_engine
 import boto3
 from botocore.exceptions import ClientError
 
+
 logging.basicConfig(
     # muestra fecha, nombre de la universidad y error
     level=logging.ERROR,
@@ -64,6 +65,15 @@ def sql_query_to_csv(PATH_SQL_FILE, PATH_CSV_FILE):
     except Exception as e:
         logger.error(e)
         raise e
+
+
+def load():
+    BUCKET_NAME = config('BUCKET_NAME')
+    PUBLIC_KEY = config('PUBLIC_KEY')
+    SECRET_KEY = config('SECRET_KEY')
+    s3 = boto3.resource('s3', aws_access_key_id=PUBLIC_KEY, aws_secret_access_key=SECRET_KEY)
+    s3.meta.client.upload_file(f'{DIR}/txt/facultad_latinoamericana_de_ciencias_sociales.txt', BUCKET_NAME, 'facultad_latinoamericana_de_ciencias_sociales.txt')
+    
 
 def transform():
     '''
@@ -154,6 +164,7 @@ def load_to_s3():
     return True
 
 
+
 default_args = {
     # 'owner': 'airflow',
     # 'depends_on_past': False,
@@ -175,11 +186,15 @@ with DAG(
         task_id='extract',
         python_callable=sql_query_to_csv,
         op_args=[PATH_SQL_FILE, PATH_CSV_FILE]
-    )  # extract from sql
-    transform = DummyOperator(task_id='transform')  # transform with pandas
-    load = PythonOperator(
-        task_id='load',
+    ) # extract from sql
+    transform = DummyOperator(task_id='transform') # transform with pandas
+    load_1 = PythonOperator(
+        task_id='load_1',
+        python_callable=load
+    ) # load to s3
+    load_2 = PythonOperator(
+        task_id='load_2',
         python_callable=load_to_s3
     )
 
-    extract >> transform >> load
+    extract >> transform >> [load_1, load_2]
