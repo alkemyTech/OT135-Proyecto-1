@@ -192,10 +192,14 @@ with DAG(
         task_id='sql_query',
         python_callable=sql_query_extract,
     )
-    transform = DummyOperator(task_id='transform')  # python operator
+    transform = PythonOperator(
+    task_id='transform',
+    python_callable=data_nomalization
+    )  # python operator
     load = PythonOperator(
         task_id='load',
         python_callable=load_s3,
         op_args=['universidad_del_cine.txt']
     )
+
     sql_query >> transform >> load
