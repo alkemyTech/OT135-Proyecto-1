@@ -9,6 +9,8 @@ from signal import pthread_kill
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
+import boto3
+
 
 
 logging.basicConfig(level=logging.ERROR,
@@ -159,6 +161,27 @@ def pandas_process_func():
         logger.error(f'Error al crear el archivo TXT: {e}')
         raise e
 
+def upload_to_s3():
+    """
+    This function uploads the txt file generated for universidad de flores to S3 
+    """
+    #Creating Session With Boto3.
+    DIR = os.path.dirname(__file__)
+    session = boto3.Session(
+    aws_access_key_id=config('PUBLIC_KEY'),
+    aws_secret_access_key=config('SECRET_KEY')
+    )
+    #Creating S3 Resource From the Session.
+    s3 = session.resource('s3')
+    object = s3.Object(config('BUCKET_NAME'), 'universidad_de_flores.txt')
+    result = object.put(Body=open(f'{DIR}/files/universidad_de_flores.txt', 'rb'))
+    res = result.get('ResponseMetadata')
+    try:
+        res.get('HTTPStatusCode') == 200
+        logger.info('File Uploaded Successfully')
+    except Exception as e:
+        logger.error('File Not Uploaded')
+        raise e
 
 default_args = {
     'retries': 1,
@@ -177,6 +200,8 @@ with DAG(
                                python_callable=query)  # Consulta SQL
     pandas_process = PythonOperator(task_id='pandas_process',
                                     python_callable=pandas_process_func)    # Procesar datos con pandas
-    load_S3 = DummyOperator(task_id='load_S3')  # Carga de datos en S3
+    load_S3 = PythonOperator(task_id='load_S3',
+                                 python_callable=upload_to_s3) # Carga de datos en S3
+
 
     query_sql >> pandas_process >> load_S3
