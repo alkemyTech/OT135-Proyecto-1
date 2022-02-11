@@ -1,11 +1,13 @@
 import logging
 import os
+
 from datetime import timedelta, datetime
 
 import pandas as pd
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
+
 from decouple import config
 from sqlalchemy import exc
 
@@ -13,6 +15,7 @@ logging.basicConfig(level=logging.DEBUG, #previously ERROR
                     format='%(asctime)s - %(module)s - %(message)s',
                     datefmt='%Y-%m-%d'
                     )
+logger = logging.getLogger(__name__)
 
 DB_USER = config('DB_USER') 
 DB_PASSWORD = config('DB_PASSWORD') 
@@ -27,7 +30,7 @@ def extract_data():
     try:
         os.makedirs(PATH_TO_CSV_FILES, exist_ok=True)
     except IOError as e:
-        logging.error(f'Error al crear los directorios: {e}')
+        logger.error(f'Error al crear los directorios: {e}')
         raise Exception('Ha ocurrido un error al crear los directorios')
     sql_connection = ('postgresql+psycopg2://'
         + DB_USER
@@ -42,18 +45,30 @@ def extract_data():
         with open(ARCHIVO,'r') as sql_file:
             sql_query = sql_file.read()
     except IOError as e:
-        logging.error(f'Error al leer los archivos SQL: {e}')
+        logger.error(f'Error al leer los archivos SQL: {e}')
         raise Exception('Ha ocurrido un error al leer los archivos SQL')
     try:
         dataframe = pd.read_sql_query(sql_query,sql_connection)
     except exc.SQLAlchemyError as e:
-        logging.error(f'Error al trabajar con la base de datos: {e}')
+        logger.error(f'Error al trabajar con la base de datos: {e}')
         raise Exception('Error al trabajar con la base de datos')
     try:
         dataframe.to_csv(f'{PATH_TO_CSV_FILES}/universities_c.csv', encoding='utf-8-sig', index=False)
     except IOError as e:
-        logging.error(f'Error al crear los archivos CSV: {e}')
+        logger.error(f'Error al crear los archivos CSV: {e}')
         raise Exception('Ha ocurrido un error al crear los archivos CSV')
+
+def csv_processing():
+    """
+    A function to be used as a pyhton operator to read the csv file and process later with pandas
+    """
+    dir = os.path.dirname(__file__)
+    try: 
+        df = pd.read_csv(f"{dir}/files/universities-c.csv")
+    except FileNotFoundError:
+        logger.error("the file you are trying to access doesn't exist, check the path and the name of the file"  )
+    else:
+        logger.info(df.head()) 
 
 default_args = {
     'retries': 1,
@@ -71,7 +86,11 @@ with DAG(
         task_id = 'query_sql',
         python_callable = extract_data
         )
-    pandas_process = DummyOperator(task_id='pandas_process')
+    pandas_process = PythonOperator(
+        task_id='pandas_process',
+        python_callable=csv_processing
+        )
     load_S3 = DummyOperator(task_id='load_S3')
 
     query_sql >> pandas_process >> load_S3
+
