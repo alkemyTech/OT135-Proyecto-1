@@ -1,12 +1,14 @@
 import logging
+import numpy as np
 import os
 
-from datetime import timedelta, datetime
-
 import pandas as pd
+import re
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
+
+from datetime import timedelta, datetime, date
 
 from decouple import config
 from sqlalchemy import exc
@@ -16,6 +18,8 @@ logging.basicConfig(level=logging.DEBUG, #previously ERROR
                     datefmt='%Y-%m-%d'
                     )
 logger = logging.getLogger(__name__)
+
+logger.setLevel(logging.DEBUG)
 
 DB_USER = config('DB_USER') 
 DB_PASSWORD = config('DB_PASSWORD') 
@@ -74,6 +78,94 @@ default_args = {
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
 }
+
+def age(born):
+    '''Esta función toma la columna date y devuelve la edad del estudiante'''
+    born = datetime.strptime(born, "%Y-%m-%d").date()
+    today = date.today()
+    return today.year - born.year - ((today.month, 
+                                      today.day) < (born.month, 
+                                                    born.day))
+
+def transform():
+    '''Esta funcion toma el csv extraido de la base de datos,
+    realiza un pre-procesamiento de los datos y devuelve un txt
+    por cada grupo de universidades.'''
+    
+    DIR = os.path.dirname(__file__)
+
+    try:
+        df = pd.read_csv(f'{DIR}/files/universities_c.csv')        
+        df_zip = pd.read_csv(f'{DIR}/files/codigos_postales.csv')
+        logger.info('csv files uploaded successfully')
+    except Exception as ex:
+        logger.error(ex)
+        raise ex
+    
+
+    # Crea una variable con las columnas.
+    columns = ['university', 'career', 'full_name', 'gender', 'postal_code', 'location', 'email', 'birth_date']
+    
+    # Reemplaza los simbolos por espacios
+    df = df[columns].replace('\_',' ', regex=True)
+    logger.info('special character replaced successfully')
+
+    # Reemplazo los valores de la columna gender
+    df["gender"] = df["gender"].replace({"m": "male", "f": "female"})
+    logger.info('gender replaced successfully')
+
+    # Reemplazo mayusculas por minusculas
+    str_columns = ['university', 'career', 'full_name', 'gender', 'location', 'email']
+
+    for c in str_columns:
+        df[c] = df[c].str.lower()
+        df[c] = df[c].str.strip()
+
+    logger.info('lowered string successfully')
+    
+    # Separo el nombre y creo dos columnas: first name y last name
+    df['first_Name'] = df['full_name'].str.split(' ', expand = True)[0]
+    df['last_Name'] = df['full_name'].str.split(' ', expand = True)[1]
+    logger.info('split column successfully')
+
+    # Creo la columna age
+    df['age'] = df['birth_date'].apply(age)
+    logger.info('age column added successfully')
+    
+    # Elimino las columnas que no se van a usar
+    df = df.drop(["full_name", "birth_date"], axis=1)
+    
+    # Convierto el codigo postal a integer
+    df['postal_code'] = df['postal_code'].replace(np.nan, 0)
+    df['postal_code'] = df['postal_code'].astype(int) 
+    
+    # Separo el dataframe y creo dos nuevos teniendo en cuenta la universidad.
+    df_jujuy = df[df['university'] == 'universidad nacional de jujuy']
+    df_palermo = df[df['university'] == 'universidad de palermo']
+    
+    # Creo un dataframe a partir del csv codigos_postales y hago un pre-procesamiento
+    df_zip = df_zip.rename(columns={'codigo_postal': 'postal_code', 'localidad': 'location'})
+    df_zip['location'] = df_zip['location'].str.lower()
+    logger.info('rename successfully')
+
+    # Realizo merge de zip code y location
+    df_univ_jujuy = pd.merge(df_jujuy, df_zip, how="left", on="location")
+    df_univ_palermo = pd.merge(df_palermo, df_zip, how="left", on="postal_code")
+    
+    df_univ_jujuy = df_univ_jujuy.drop(["postal_code_x"], axis=1)
+    df_univ_jujuy = df_univ_jujuy.rename(columns={'postal_code_y': 'zip_code'})
+    df_univ_palermo = df_univ_palermo.drop(["location_x"], axis=1)
+    df_univ_palermo = df_univ_palermo.rename(columns={'location_y': 'location'})
+    
+    # GUARDAR EL DF COMO TXT
+    try:
+        os.makedirs(f'files', exist_ok= True)
+        df_univ_jujuy.to_csv(f'{DIR}/files/universidad_nacional_jujuy.txt', index=False)      
+        df_univ_palermo.to_csv(f'{DIR}/files/universidad_palermo.txt', index=False)
+        logger.info('txt files saved successfully')
+    except Exception as ex:
+        logger.error(ex)
+        raise ex
 
 with DAG(
     'dag_universities_c',
