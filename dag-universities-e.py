@@ -197,8 +197,14 @@ with DAG(
     schedule_interval=timedelta(hours=1),
     start_date=datetime(2022, 1, 27)
 ) as dag:
-    extract_from_sql = DummyOperator(task_id='extract_from_sql')
-    transform_with_pandas = DummyOperator(task_id='transform_with_pandas')
+    extract_from_sql = PythonOperator(
+        task_id='extract_from_sql',
+        python_callable=extract
+    )
+    transform_with_pandas = PythonOperator(
+        task_id='transform_with_pandas',
+        python_callable=data_normalization
+    )
     load_to_s3 = PythonOperator(
         task_id='load_to_s3',
         python_callable=load_to_s3
